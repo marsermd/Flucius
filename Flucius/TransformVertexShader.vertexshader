@@ -1,0 +1,45 @@
+#version 330 core
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texture_coord;
+layout(location = 2) in vec3 normal;
+
+// параметры преобразований
+uniform struct Transform
+{
+        mat4 model;
+        mat4 viewProjection;
+        vec3 cameraPosition;
+} transform;
+
+// параметры точеченого источника освещения
+uniform struct PointLight
+{
+        vec4 position;
+        vec4 ambient;
+        vec4 diffuse;
+        vec4 specular;
+        vec3 attenuation;
+} light;
+
+// параметры для фрагментного шейдера
+out Vertex {
+        vec3  normal;
+        vec3  lightDir;
+        vec3  viewDir;
+        float distance;
+} vert;
+
+out vec3 fragment_color;
+
+void main() {
+	vec4 vertex = vec4(position, 1);
+    gl_Position = transform.viewProjection * transform.model * vertex;
+
+	vec4 lightDir = light.position - vertex;
+    vert.normal   = transpose(mat3(inverse(transform.model))) * normal;
+	vert.lightDir = vec3(lightDir);
+	vert.viewDir  = transform.cameraPosition - vec3(vertex);
+	vert.distance = length(lightDir);
+
+	fragment_color = vert.normal;
+ }
