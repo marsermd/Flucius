@@ -37,16 +37,16 @@ private:
 
 	GLuint vbo, vao;
 
-	int cudaCalcGrid(Particle * particles, int pCount);
+	int cudaCalcGrid(glm::vec3 * particles_dev, int pCount);
 	int cudaAnalyzeCubes(float threshold);
 	void cudaComputeSurface(int maxVerts, float threshold);
 	void cudaInit(int pCount);
-	void cudaRestoreCVConnections();
 	void cudaClear();
 	void initGrid();
 	void createCudaMemory(int pCount);
 	void deleteCudaMemory();
 	void allocateTextures();
+	void cudaRestoreCVConnections();
 
 	void createVBO(int size) {
 		glGenVertexArrays(1, &vao);

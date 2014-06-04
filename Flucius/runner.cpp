@@ -150,6 +150,8 @@ glm::mat3 strip(glm::mat4 m) {
 	);
 }
 
+
+#ifndef __TESTING__
 int main() {
 	openWindow(1024, 768);
 
@@ -230,4 +232,5 @@ int main() {
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
 }
+#endif
 
