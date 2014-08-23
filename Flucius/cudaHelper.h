@@ -1,8 +1,11 @@
 #ifndef CUDA_HELPER_H
 #define CUDA_HELPER_H
 
-#include <glm\glm.hpp>
 #include <cuda_runtime.h>
+#include <thrust\device_ptr.h>
+#include <thrust\detail\raw_pointer_cast.h>
+
+#include "PSystemStructures.h"
 
 #define NEIGHBOURS_3D 27
 #define THREADS_CNT 128
@@ -31,4 +34,11 @@ T* cudaGetArr(T* array_dev, int size)
 	checkCudaErrors(cudaMemcpy((void *) arr, (void *)(array_dev), size * sizeof(T), cudaMemcpyDeviceToHost));
 	return arr;
 }
+
+template <typename T>
+T* cudaGetRawRef(thrust::device_vector<T> * vector)
+{
+	return thrust::raw_pointer_cast(vector->data());
+}
+
 #endif

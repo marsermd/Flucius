@@ -1,15 +1,13 @@
 #ifndef BOX_H
 #define BOX_H
 #define EPS 1.0E-5f
-#include <GLFW\glfw3.h>
 #include <glm\glm.hpp>
-class Box {
-public:
+struct Box {
 	Box (glm::vec3 pos, glm::vec3 size) : 
 		pos(pos), 
 		size(size) 
 		{};
-	Box (glm::vec3 pos, GLfloat size) : 
+	Box (glm::vec3 pos, float size) : 
 		pos(pos), 
 		size(glm::vec3(size, size, size)) 
 		{};

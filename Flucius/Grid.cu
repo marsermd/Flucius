@@ -3,7 +3,8 @@
 
 Grid::Grid(): 
 	count(120),
-	box(Box(glm::vec3(-3, -3, -3), 6.0f))
+	box(Box(glm::vec3(-3, -3, -3), 6.0f)),
+	pSystem(4.5f)
 {
 	numVertices = (count + 1) * (count + 1) * (count + 1);
 	numCubes = count * count * count;

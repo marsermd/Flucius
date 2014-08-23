@@ -227,14 +227,15 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <CudaCompile Include="cudaHelper.cu" />
     <CudaCompile Include="Grid.cu" />
-    <CudaCompile Include="gridKernel.cu">
+    <CudaCompile Include="GridKernel.cu">
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compute_20,sm_21</CodeGeneration>
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Rel|Win32'">compute_20,sm_21</CodeGeneration>
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Test|Win32'">compute_20,sm_21</CodeGeneration>
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='TestDebug|Win32'">compute_20,sm_21</CodeGeneration>
     </CudaCompile>
     <CudaCompile Include="Partition3DKernel.cu" />
-    <CudaCompile Include="psystemKernel.cu" />
+    <CudaCompile Include="neighboursKernel.cu" />
+    <CudaCompile Include="PsystemKernel.cu" />
     <CudaCompile Include="vectorHelper.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -253,8 +254,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="cudaHelper.h" />
     <ClInclude Include="Grid.h" />
     <ClInclude Include="GridStructures.h" />
+    <ClInclude Include="neighbours.h" />
     <ClInclude Include="PSystem.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="PSystemStructures.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="shader.h" />

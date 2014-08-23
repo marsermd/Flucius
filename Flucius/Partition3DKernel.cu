@@ -8,7 +8,6 @@
 #include <thrust\sort.h>
 
 #include "cudaHelper.h"
-#include "GridStructures.h"
 
 __global__ void clearPartitions(int* partitons, int ttlCount)
 {
@@ -43,14 +42,14 @@ __global__ void matchElementToCell(int * partitonIdx, int * partitons, int eCoun
 			partitons[partitonIdx[index]] = index;
 	}
 }
-//________________________________________DEVICE CODE___________________________
+//________________________________________HOST CODE___________________________
 template <typename T>
 void Partition3D<T>::update(T * elements_dev, int eCount) {
 	clearPartitions<<<getBlocks(ttlCount), getThreads(ttlCount)>>>(partitions_dev, ttlCount);
 	checkCudaErrorsWithLine("failed clearing partition");
 
 	dim3 counts(countx, county, countz);
-	//maby template parameter should be later. GOD KNOWS!
+
 	findElementPartitionIndex<T><<<getBlocks(eCount), getThreads(eCount)>>>(elements_dev, partitionIdx_dev, eCount, r, counts);
 	checkCudaErrorsWithLine("failed calculating elements positions");
 
@@ -59,17 +58,8 @@ void Partition3D<T>::update(T * elements_dev, int eCount) {
 	thrust::sort_by_key(partitionIdx_t, partitionIdx_t + eCount, elements_t);
 	checkCudaErrorsWithLine("failed thrust sorting");
 
-	GridVertex * els = cudaGetArr<GridVertex>(elements_dev, eCount);
-	int * paridx = cudaGetArr<int>(partitionIdx_dev, eCount);
-
 	matchElementToCell<<<getBlocks(eCount), getThreads(eCount)>>>(partitionIdx_dev, partitions_dev, eCount, ttlCount);
 	checkCudaErrorsWithLine("failed matching elements");
-
-	int * partitions = cudaGetArr<int>(partitions_dev, ttlCount);
-
-	cudaFreeHost(els);
-	cudaFreeHost(partitions);
-	cudaFreeHost(paridx);
 
 	thrust::device_vector<int> counts_t(eCount);
 	thrust::fill(counts_t.begin(), counts_t.end(), 1);
@@ -113,9 +103,14 @@ void createTEMPLATE(){
 	delete p3d;
 }
 
+
+#include "GridStructures.h"
+#include "PSystemStructures.h"
 // NO, REALLY, DON'T CALL IT! I MEAN IT! AND GOD SAVE YOU IF YOU USE IT
 void dontCALLthisFUNKTION_IT_IsUsLeSS() {
+	//register here any type you want to use
 	createTEMPLATE<GridVertex>();
+	createTEMPLATE<Particle>();
 }
 
 #endif

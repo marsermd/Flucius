@@ -79,12 +79,5 @@ private:
 		glDeleteVertexArrays(1, &vao);
 		vao = 0;
 	}
-
-#ifdef __TESTING__
-#include "GridTest.h"
-#include "Partition3D.h"
-	friend class GridTest;
-	friend class PartitionTest;
-#endif
 };
 #endif

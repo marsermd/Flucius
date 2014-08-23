@@ -17,6 +17,7 @@
 
 #define uint unsigned int
 #define PI 3.1415f
+#define GRID_R2 0.007f
 
 //________________________________INLINE HELPERS________________________________________________________
 inline __device__ __host__ float lerp(float a, float b, float t)
@@ -85,7 +86,7 @@ __global__ void resetValuesKernel(GridVertex * vertices, int vCount)
 	vertices[fullID].normal = glm::vec3(0);
 }
 
-__constant__ float R4 = PARTICLE_R2 * PARTICLE_R2;
+__constant__ float R4 = GRID_R2 * GRID_R2;
 __global__ void calcGridKernel(glm::vec3 * particles, GridVertex * vertices, int pCount, int vCount, int cnt, int * partitions, int * partitionIdx,
 							   int maxItems, float r, int size, int ttlCount)
 {
@@ -109,14 +110,15 @@ __global__ void calcGridKernel(glm::vec3 * particles, GridVertex * vertices, int
 	x += neighbourID % 3 - 1;
 
 	int partitionID = __mul24(size, __mul24(size, x)) + __mul24(size, y) + z;
+	if (partitionID >= ttlCount || partitionID < 0) return;
 	int baseVertexID = partitions[partitionID];
 	int vertexID = baseVertexID + elementID;
-	if (partitionID >= ttlCount || vertexID >= vCount || partitionIdx[vertexID] != partitionIdx[baseVertexID]) return;
+	if (vertexID >= vCount || partitionIdx[vertexID] != partitionIdx[baseVertexID]) return;
 
 	glm::vec3 diff = vertices[vertexID].pos - p;
 	float dist2 = glm::dot(diff, diff);
-	//float backDist4 = dist2 > PARTICLE_R2 * 2 ? 0 : -__log2f((dist2 / 2) * (dist2 / 2) / PARTICLE_R2) / 1.3f;
-	//float backDist4 = dist2 > PARTICLE_R2 * 2 ? 0 : __fdiv_rd(__fadd_rz(__cosf(__fmul_rz(__fdiv_rz(dist2, __fmul_rz(PARTICLE_R2, 4)), PI)), 1), 1.7f);
+	//float backDist4 = dist2 > GRID_R2 * 2 ? 0 : -__log2f((dist2 / 2) * (dist2 / 2) / GRID_R2) / 1.3f;
+	//float backDist4 = dist2 > GRID_R2 * 2 ? 0 : __fdiv_rd(__fadd_rz(__cosf(__fmul_rz(__fdiv_rz(dist2, __fmul_rz(GRID_R2, 4)), PI)), 1), 1.7f);
 	float backDist4 = __fmul_rz(R4, __frcp_rz((max(__fmul_rz(dist2, dist2), 0.0000001f))));
 	if (backDist4 > 0.01) {
 		vertices[vertexID].normal += diff * backDist4;
@@ -236,6 +238,7 @@ __global__ void generateTriangles(Vertex *triangleVertices, int *cubesCompact, G
 
 int Grid::cudaCalcGrid(glm::vec3 * particles_dev, int pCount) {	
 	resetValuesKernel<<<getBlocks(numVertices), getThreads(numVertices)>>>(vertices_dev, numVertices);
+	cudaDeviceSynchronize();
 	checkCudaErrorsWithLine("failed reseting vertices values");
 
 	int cnt = NEIGHBOURS_3D * partition3D->maxItemsPerPartition;
@@ -243,6 +246,7 @@ int Grid::cudaCalcGrid(glm::vec3 * particles_dev, int pCount) {
 	calcGridKernel<<<getBlocks(cnt * pCount), getThreads(cnt * pCount)>>>(particles_dev, vertices_dev, pCount, numVertices, cnt, 
 		partition3D->partitions_dev, partition3D->partitionIdx_dev, partition3D->maxItemsPerPartition, partition3D->r,
 		partition3D->countx, partition3D->ttlCount);
+	cudaDeviceSynchronize();
 	checkCudaErrorsWithLine("failed calculating grid");
 	return 0;
 }
@@ -250,9 +254,12 @@ int Grid::cudaCalcGrid(glm::vec3 * particles_dev, int pCount) {
 int activeCubes, totalVertices;
 int Grid::cudaAnalyzeCubes(float threshold) {
 	classifyVertices<<<getBlocks(numVertices), getThreads(numVertices)>>>(vertices_dev, verticesOccupied_dev, numVertices, threshold);
+	cudaDeviceSynchronize();
+	checkCudaErrorsWithLine("failed classify vertices");
 	int activeVertices = ThrustExScanWrapper(verticesOccupiedScan_dev, verticesOccupied_dev, numVertices);
 	compactVertices<<<getBlocks(numVertices), getThreads(numVertices)>>>(verticesCompact_dev, verticesOccupied_dev, verticesOccupiedScan_dev, numVertices);
-	checkCudaErrorsWithLine("failed classify vertices");
+	checkCudaErrorsWithLine("failed compact vertices");
+	
 
 	resetCubes<<<getBlocks(numCubes), getThreads(numCubes)>>>(cubes_dev, numCubes);
 	calcCubeIndices<<<getBlocks(activeVertices * 8), getThreads(activeVertices * 8)>>>(vertices_dev, verticesToCubes_dev, numVertices, verticesCompact_dev, cubes_dev, activeVertices);
