@@ -54,7 +54,7 @@ PSystem::PSystem(float size):
 	//addParticle(glm::vec3(0.4f, 5.5f, 0.5f));
 	//addParticle(glm::vec3(0.5f, 0.5f, 5.5f));
 	//addParticle(glm::vec3(0.5f, 0.5f, 0.5f));
-#define CNT 20
+#define CNT 15
 #include <stdlib.h>
 	float dist = PARTICLE_H * 0.7f;
 	for (int x = 0; x < CNT; x++) {

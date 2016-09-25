@@ -9,11 +9,11 @@
 #include "cudaHelper.h"
 #include "neighbours.h"
 
-#define ITERATIONS_COUNT 4
-#define DELTA_Q (0.1f*PARTICLE_H)
-#define PRESSURE_K 0.1
-#define PRESSURE_N 6
-#define REST_DENSITY 150000000.0f 
+#define ITERATIONS_COUNT 1
+#define DELTA_Q (0.03f*PARTICLE_H)
+#define PRESSURE_K 3.0f
+#define PRESSURE_N 5.0f
+#define REST_DENSITY 90000000.0f 
 
 //KERNEL FUNCTIONS(in terms of math)
 __device__ float wPoly6(glm::vec3 i, glm::vec3 j)
@@ -184,7 +184,7 @@ __global__ void updatePositions(EmulatedParticles_Dev ep)
 void PSystem::update() {
 	particles_t->setupDev(particles_dev);
 	int count = particles_dev->count;
-	float dt = 0.01f;
+	float dt = 0.1f;
 
 	applyExternalForces<<<getBlocks(count), getThreads(count)>>>(*particles_dev, dt);
 	checkCudaErrorsWithLine("apply forces failed!");

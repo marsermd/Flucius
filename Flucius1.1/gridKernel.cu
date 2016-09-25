@@ -17,7 +17,7 @@
 
 #define uint unsigned int
 #define PI 3.1415f
-#define GRID_R2 0.007f
+#define GRID_R2 0.01f
 
 //________________________________INLINE HELPERS________________________________________________________
 inline __device__ __host__ float lerp(float a, float b, float t)

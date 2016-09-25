@@ -62,9 +62,11 @@ void Partition3D<T>::update(T * elements_dev, int eCount) {
 	checkCudaErrorsWithLine("failed matching elements");
 
 	thrust::device_vector<int> counts_t(eCount);
-	thrust::fill(counts_t.begin(), counts_t.end(), 1);
+	thrust::uninitialized_fill(counts_t.begin(), counts_t.end(), 1);
+	checkCudaErrorsWithLine("failed setting up counts");
 	thrust::exclusive_scan_by_key(partitionIdx_t, partitionIdx_t + eCount, counts_t.begin(), counts_t.begin());
-	maxItemsPerPartition = *thrust::max_element(counts_t.begin(), counts_t.end()) + 1;
+	checkCudaErrorsWithLine("failed scaning matched elements");
+	maxItemsPerPartition = thrust::reduce(counts_t.begin(), counts_t.end(), (int)0, thrust::maximum<int>()) + 1;
 	checkCudaErrorsWithLine("failed counting maxItemsPerPartition");
 }
 
@@ -106,8 +108,9 @@ void createTEMPLATE(){
 
 #include "GridStructures.h"
 #include "PSystemStructures.h"
+// This function is used ONLY to make compiler generate template of given type.
 // NO, REALLY, DON'T CALL IT! I MEAN IT! AND GOD SAVE YOU IF YOU USE IT
-void dontCALLthisFUNKTION_IT_IsUsLeSS() {
+void dontCALLthisFUNCTION_IT_IsUsLeSS() {
 	//register here any type you want to use
 	createTEMPLATE<GridVertex>();
 	createTEMPLATE<Particle>();

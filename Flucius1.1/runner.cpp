@@ -28,11 +28,9 @@ struct Material
 
 void MaterialSetup(GLuint program, const Material &material)
 {
-	// установка цвета
 	GLuint colorID = glGetUniformLocation(program, "material.color");
-	glUniform3f(colorID, 0.8f, 0.0f, 0.0f);
+	glUniform3f(colorID, 0.0f, 0.0f, 0.8f);
 
-	// установка параметров
 	glUniform4fv(glGetUniformLocation(program, "material.ambient"),  1, glm::value_ptr(material.ambient));
 	glUniform4fv(glGetUniformLocation(program, "material.diffuse"),  1, glm::value_ptr(material.diffuse));
 	glUniform4fv(glGetUniformLocation(program, "material.specular"), 1, glm::value_ptr(material.specular));
@@ -52,7 +50,6 @@ struct PointLight
 
 void PointLightSetup(GLuint program, const PointLight &light)
 {
-	// установка параметров
 	glUniform4fv(glGetUniformLocation(program, "light.position"),    1, glm::value_ptr(light.position));
 	glUniform4fv(glGetUniformLocation(program, "light.ambient"),     1, glm::value_ptr(light.ambient));
 	glUniform4fv(glGetUniformLocation(program, "light.diffuse"),     1, glm::value_ptr(light.diffuse));

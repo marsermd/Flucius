@@ -16,7 +16,7 @@
 
 #define CALC_KERNEL(r) (r > PARTICLE_H ? 0 : powf(PARTICLE_H * PARTICLE_H - r * r, 3) * POLY6_CONST / (PARTICLE_H * PARTICLE_H * PARTICLE_H * PARTICLE_H))
 
-#define MAX_NEIGHBOURS 30
+#define MAX_NEIGHBOURS 10
 #define RELAXATION .01f // epselon, or relaxation parameter
 
 struct Particle{
