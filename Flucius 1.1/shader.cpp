@@ -25,7 +25,7 @@ void loadShader(GLuint * shaderID, const char * file_path, GLuint programID) {
 		shaderStream.close();
 	} else {
 		printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", file_path);
-		getchar();
+		//getchar();
 		exit(-1);
 	}
 
@@ -60,18 +60,26 @@ void loadShader(GLuint * shaderID, const char * file_path, GLuint programID) {
 	}
 }
 
-GLuint LoadShaders(const char * vertex_file_path, const char * fragment_file_path) {
+GLuint loadShaders(const char * vertexFilePath, const char * fragmentFilePath, const char * geometryFilePath) {
 
 	// Create the shaders
-	GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-	GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 	GLuint programID = glCreateProgram();
 
-	loadShader(&vertexShaderID, vertex_file_path, programID);
-	loadShader(&fragmentShaderID, fragment_file_path, programID);
-
+	GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+	loadShader(&vertexShaderID, vertexFilePath, programID);
 	glDeleteShader(vertexShaderID);
+
+	GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+	loadShader(&fragmentShaderID, fragmentFilePath, programID);
 	glDeleteShader(fragmentShaderID);
+
+	if (geometryFilePath != NULL)
+	{
+		GLuint geometryShaderID = glCreateShader(GL_GEOMETRY_SHADER);
+		loadShader(&geometryShaderID, geometryFilePath, programID);
+		glDeleteShader(geometryShaderID);
+	}
+
 
 	return programID;
 }

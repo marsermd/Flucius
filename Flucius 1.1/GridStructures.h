@@ -9,7 +9,7 @@ struct __align__(32) GridVertex{
 	int id;
 };
 
-struct __align__(4) GridCube {
+struct GridCube {
 	int cubeID;
 };
 

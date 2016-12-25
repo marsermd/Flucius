@@ -10,10 +10,12 @@
 #include <glm\gtx\transform.hpp>
 #include <glm\gtc\type_ptr.hpp>
 
+#include <cuda_profiler_api.h>
 
 #include "shader.h"
 #include "Camera.h"
 #include "Grid.h"
+#include "SimplePsystemDrawer.h"
 #include "Scene.h"
 
 struct Material
@@ -65,7 +67,7 @@ void openWindow(int width, int height) {
 		exit(-1);
 	}
 
-	glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
+	glfwWindowHint(GLFW_SAMPLES, 2); // 2x antialiasing
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // OpenGL 3.3
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -93,62 +95,6 @@ void openWindow(int width, int height) {
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 }
 
-#include "torus.h"
-GLuint vao;
-
-GLuint triangleVao;
-void bindTriangle() {
-	GLuint vbo[2];
-	glGenVertexArrays(1, &triangleVao);
-	glBindVertexArray(triangleVao);
-
-	glGenBuffers(2, vbo);
-
-	const Vertex triangleVertices[3] = {
-		{{0.0f / size, 0.0f / size, 0.0f / size}, {0.500000f, 0.308658f}, {0.0f, 0.0f, 1.0f}},
-		{{1.0f / size, 0.0f / size, 0.0f / size}, {0.500000f, 0.308658f}, {0.0f, 0.0f, 1.0f}},
-		{{0.0f / size, 1.0f / size, 0.0f / size}, {0.500000f, 0.308658f}, {0.0f, 0.0f, 1.0f}}};
-
-	const GLuint triangleIndices[3] = {0, 1, 2};
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(Vertex), triangleVertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * sizeof(GLuint), triangleIndices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-		sizeof(Vertex), (const GLvoid*)0);
-
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
-		sizeof(Vertex), (const GLvoid*)(sizeof(float[3])));
-
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-		sizeof(Vertex), (const GLvoid*)(sizeof(float[3]) + sizeof(float[2])));
-}
-
-void drawTriangle() {
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glBindVertexArray(triangleVao);
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, NULL);
-	glDisableVertexAttribArray(2);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(0);
-}
-
-glm::mat3 strip(glm::mat4 m) {
-	return glm::mat3
-		(
-		m[0][0], m[0][1], m[0][2],
-		m[1][0], m[1][1], m[1][2],
-		m[2][0], m[2][1], m[2][2]
-	);
-}
-
-
-#ifndef __TESTING__
 int main() {
 	openWindow(1024, 768);
 
@@ -167,16 +113,14 @@ int main() {
 	pointLight.specular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	pointLight.attenuation = glm::vec3(0.2f, 0.0f, 0.02f);
 
-	GLuint programID = LoadShaders("TransformVertexShader.vertexshader", "ColorFragmentShader.fragmentshader");
+	GLuint programID = loadShaders("TransformVertexShader.vertexshader", "ColorFragmentShader.fragmentshader");
 
 	//display range : 0.1 unit <-> 100 units
 	Camera camera(window);
 
-	bindTriangle();
-	Mesh thor = Mesh();
-	thor.bind(vertices, vcount, indices, icount);
-	Grid grid = Grid();
-
+	PSystem pSystem = PSystem(90.0f);
+	SimplePsystemDrawer pSystemDrawer = SimplePsystemDrawer(&pSystem);
+	pSystem.setRenderer(&pSystemDrawer);
 
 	float a = 0;
 
@@ -207,15 +151,11 @@ int main() {
 		MaterialSetup(programID, material);
 		PointLightSetup(programID, pointLight);
 
-		grid.modelMatrixID = modelMatrixID;
-		grid.render();
+		pSystemDrawer.modelMatrixID = modelMatrixID;
+		pSystem.render();
 
 		glm::mat4 initial = glm::translate(glm::scale(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 		glm::mat4 model = glm::rotate(glm::rotate(initial, a, glm::vec3(0.0f, 1.0f, 0.0f)), 45.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
-
-		thor.modelMatrixID = modelMatrixID;
-		thor.modelMatrix = model;
-		//thor.render();
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -228,6 +168,5 @@ int main() {
 
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
+	cudaProfilerStop();
 }
-#endif
-

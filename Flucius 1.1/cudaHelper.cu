@@ -1,11 +1,11 @@
 #include "cudaHelper.h"
 
-int getThreads (int runCount) {
-	return runCount > THREADS_CNT ? THREADS_CNT : runCount;
+int getThreads(int runCount, int threads_cnt) {
+	return runCount > threads_cnt ? threads_cnt : runCount;
 }
 
-dim3 getBlocks (int runCount) {
-	runCount = (runCount - 1) / THREADS_CNT + 1;
+dim3 getBlocks(int runCount, int threads_cnt) {
+	runCount = (runCount - 1) / threads_cnt + 1;
 	int blocksx = 1;
 	int blocksy = 1;
 	if (runCount > 65535) {

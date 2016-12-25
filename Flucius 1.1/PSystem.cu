@@ -4,6 +4,7 @@
 #include <thrust\detail\raw_pointer_cast.h>
 
 #include "cudaHelper.h"
+#include "PSystemConstants.h"
 
 #define START_SIZE 32368
 #define GRAVITY glm::vec3(0, -9.8f, 0)
@@ -40,29 +41,31 @@ void EmulatedParticles_Thrust::setupDev(EmulatedParticles_Dev * particles_dev) {
 	particles_dev->neighboursCnt  =       cudaGetRawRef<int>(&neighboursCnt);
 }
 
-PSystem::PSystem(float size):
-	box(glm::vec3(0.07f), glm::vec3(size, 6, size)),
+PSystem::PSystem(float size) :
+	box(glm::vec3(0), glm::vec3(size)),
 	particles_t(new EmulatedParticles_Thrust()),
 	particles_dev(new EmulatedParticles_Dev())
 {
 
-	//addParticle(glm::vec3(5.5f, 5.5f, 5.5f));
-	//addParticle(glm::vec3(5.5f, 5.5f, 0.5f));
-	//addParticle(glm::vec3(5.5f, 0.5f, 5.5f));
-	//addParticle(glm::vec3(5.5f, 0.5f, 0.5f));
-	//addParticle(glm::vec3(0.4f, 5.5f, 5.5f));
-	//addParticle(glm::vec3(0.4f, 5.5f, 0.5f));
-	//addParticle(glm::vec3(0.5f, 0.5f, 5.5f));
-	//addParticle(glm::vec3(0.5f, 0.5f, 0.5f));
-#define CNT 15
-#include <stdlib.h>
-	float dist = PARTICLE_H * 0.7f;
-	for (int x = 0; x < CNT; x++) {
-		for (int y = 4; y < 4 + CNT; y++) {
-			for (int z = 0; z < CNT; z++) {
-				addParticle(glm::vec3(x * dist + rand() % 100 * 0.0001f , 2.0f + y * dist + rand() % 100 * 0.0001f, z * dist + rand() % 100 * 0.0001f));
-				//addParticle(glm::vec3(1.0f + x * PARTICLE_R, 2.0f + x * (z - 18) * (z - 17) * PARTICLE_R / 300, 1.0f + z * PARTICLE_R));
+	/*addParticle(glm::vec3(5.5f, 5.5f, 5.5f));
+	addParticle(glm::vec3(5.5f, 5.5f, 0.5f));
+	addParticle(glm::vec3(5.5f, 0.5f, 5.5f));
+	addParticle(glm::vec3(5.5f, 0.5f, 0.5f));
+	addParticle(glm::vec3(0.4f, 5.5f, 5.5f));
+	addParticle(glm::vec3(0.4f, 5.5f, 0.5f));
+	addParticle(glm::vec3(0.5f, 0.5f, 5.5f));
+	addParticle(glm::vec3(0.5f, 0.5f, 0.5f));*/
+	//addParticle(glm::vec3(1 + 1 * PARTICLE_R * 2.0f, 1, 1 + 1 * PARTICLE_R * 2.0f));
+	//addParticle(glm::vec3(1 + 1 * PARTICLE_R * 1, 1, 1 + 1 * PARTICLE_R * 1));
+	//addParticle(glm::vec3(5 * PARTICLE_R + 1 * PARTICLE_R, 5 * PARTICLE_R, 5 * PARTICLE_R + 3 * PARTICLE_R));
 
+	const int CNT = 20;
+	float dist = PARTICLE_H * 1.0f;
+	for (int x = 2; x < CNT; x++) {
+		for (int y = 10; y < 10 + CNT; y++) {
+			for (int z = 2; z < CNT; z++) {
+				addParticle(glm::vec3(x * dist + rand() % 100 * 0.01f , 2.0f + y * dist + rand() % 100 * 0.01f, z * dist + rand() % 100 * 0.01f));
+				//addParticle(glm::vec3(1.0f + x * PARTICLE_R, 2.0f + x * (z - 18) * (z - 17) * PARTICLE_R / 300, 1.0f + z * PARTICLE_R));
 			}
 		}
 	}
@@ -90,7 +93,7 @@ void PSystem::addParticle(glm::vec3 pos) {
 		0
 	};
 	if (particles_t->count == particles_t->positions.size()) {
-		int newSize = max(particles_t->count * 2, 1);
+		int newSize = max(particles_t->count * 2, 100);
 		particles_t->positions.resize(newSize, glm::vec3(0.0f));
 		particles_t->particles.resize(newSize, added);
 		particles_t->externalForces.resize(newSize, GRAVITY);
@@ -101,7 +104,7 @@ void PSystem::addParticle(glm::vec3 pos) {
 	particles_t->particles[particles_t->count] = added;
 
 	particles_t->count++;
-	checkCudaErrorsWithLine("adding particles failed!");
+	//checkCudaErrorsWithLine("adding particles failed!");
 
 }
 

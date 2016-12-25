@@ -10,9 +10,9 @@
 #define NEIGHBOURS_3D 27
 #define THREADS_CNT 128
 
-int getThreads (int runCount);
+int getThreads(int runCount, int threads_cnt = THREADS_CNT);
 
-dim3 getBlocks (int runCount);
+dim3 getBlocks(int runCount, int threads_cnt = THREADS_CNT);
 
 void checkCudaErrors(cudaError_t cudaStatus);
 

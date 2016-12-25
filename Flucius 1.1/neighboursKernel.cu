@@ -2,8 +2,9 @@
 
 #include "device_launch_parameters.h" 
 #include "cudaHelper.h"
+#include "PSystemConstants.h"
 
-__global__ void findKNearestNeighbors(Particle* particles, int pCount, int * partitionIdx, int * partitions, dim3 counts, int ttlCount, int* neighbors, int* neighboursCnt, Box box){
+__global__ void findKNearestNeighbors(Particle* particles, int pCount, int * partitionIdx, int * partitions, dim3 counts, int ttlCount, int* neighbors, int* neighboursCnt){
 	int index = threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT;
 	if(index < pCount) {
 		int curNeighboursCnt = 0;
@@ -20,9 +21,11 @@ __global__ void findKNearestNeighbors(Particle* particles, int pCount, int * par
 		int m, idMax, beginID, curID, idx;
 		glm::vec3 neighbourPos;
 
-		for (int i = z - 1; i <= z + 1; i++) {
+		for (int k = x - 1; k <= x + 1; k++) {
 			for (int j = y - 1; j <= y + 1; j++) {
-				for (int k = x - 1; k <= x + 1; k++) {
+				for (int i = z - 1; i <= z + 1; i++) {
+					if (x >= counts.x || y >= counts.y || z >= counts.z ||
+						x < 0 || y < 0 || z < 0) continue;
 					idx = counts.z * counts.y * k + counts.z * j + i;
 					if (idx < 0 || idx >= ttlCount) continue;
 
@@ -68,12 +71,12 @@ __global__ void findKNearestNeighbors(Particle* particles, int pCount, int * par
 	}
 }
 
-void cudaFindKNeighbors(Particle* particles_dev, int pCount, Partition3D<Particle> * partition3d, int * neighbours_dev, int * neighboursCnt_dev, Box box) {
+void cudaFindKNeighbors(Particle* particles_dev, int pCount, Partition3D<Particle> * partition3d, int * neighbours_dev, int * neighboursCnt_dev) {
 	partition3d->update(particles_dev, pCount);
 	dim3 counts(partition3d->countx, partition3d->county, partition3d->countz);
 	findKNearestNeighbors<<<getBlocks(pCount), getThreads(pCount)>>>(particles_dev, pCount,
 		partition3d->partitionIdx_dev, partition3d->partitions_dev, counts, partition3d->ttlCount,
-		neighbours_dev, neighboursCnt_dev, box);
+		neighbours_dev, neighboursCnt_dev);
 
 	checkCudaErrorsWithLine("failed finding nearest neighbours");
 }

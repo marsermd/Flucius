@@ -4,26 +4,12 @@
 #include <glm\glm.hpp>
 #include <thrust\device_vector.h>
 
-#define PI 3.1415f
-#define POLY6_CONST 1.5666814f
-#define SPIKY_CONST 14.323944f
-
-#define PARTICLE_H 0.18f
-#define PARTICLE_H6 (float)(PARTICLE_H * PARTICLE_H * PARTICLE_H * PARTICLE_H * PARTICLE_H * PARTICLE_H)
-#define PARTICLE_H9 (float)(PARTICLE_H6 * PARTICLE_H * PARTICLE_H * PARTICLE_H)
-
-#define PARTICLE_R 0.06f
-
-#define CALC_KERNEL(r) (r > PARTICLE_H ? 0 : powf(PARTICLE_H * PARTICLE_H - r * r, 3) * POLY6_CONST / (PARTICLE_H * PARTICLE_H * PARTICLE_H * PARTICLE_H))
-
-#define MAX_NEIGHBOURS 10
-#define RELAXATION .01f // epselon, or relaxation parameter
-
 struct Particle{
-	glm::vec3 pos;
 	int id;
-	glm::vec3 velocity;
+	glm::vec3 pos;
 	glm::vec3 deltaPos;
+	glm::vec3 velocity;
+	glm::vec3 nextVelocity;
 	float lambda; 
 };
 

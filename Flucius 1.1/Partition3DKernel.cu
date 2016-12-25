@@ -92,7 +92,6 @@ void Partition3D<T>::cudaFreeMemory() {
 	cudaFree(partitionIdx_dev);
 }
 
-
 template <typename T> 
 void createTEMPLATE(){
 	T elements[2];
@@ -102,6 +101,7 @@ void createTEMPLATE(){
 	Partition3D<T> * p3d = new Partition3D<T>(elements_dev, 2, Box(glm::vec3(-1), 2), 0.25f);
 	p3d->update(elements_dev, 2);
 	p3d->contains(0, 0, 0);
+	cudaFree(elements_dev);
 	delete p3d;
 }
 

@@ -1,0 +1,10 @@
+layout (points) in;
+layout (triangle_strip) out;
+layout (max_vertices = 4) out; 
+
+in Vertex {
+        vec3  normal;
+        vec3  lightDir;
+        vec3  viewDir;
+        float distance;
+} vert;

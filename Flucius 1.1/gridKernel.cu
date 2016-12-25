@@ -17,7 +17,6 @@
 
 #define uint unsigned int
 #define PI 3.1415f
-#define GRID_R2 0.01f
 
 //________________________________INLINE HELPERS________________________________________________________
 inline __device__ __host__ float lerp(float a, float b, float t)
@@ -32,13 +31,8 @@ inline __device__ __host__ glm::vec3 lerp(glm::vec3 &a, glm::vec3 &b, float t)
 
 //_______________________________DEVICE VARIABLES________________________________________________________________________________________________________
 
-int *edgeTable_dev;
 int *triTable_dev;
 int *vertsCountTable_dev;
-
-texture<GLuint, 1, cudaReadModeElementType> edgeTex;
-texture<GLuint, 1, cudaReadModeElementType> triTex;
-texture<GLuint, 1, cudaReadModeElementType> vertsCountTex;
 
 int *verticesOccupied_dev = 0;
 int *verticesOccupiedScan_dev = 0;
@@ -57,15 +51,13 @@ Vertex *triangleVertices_dev = 0;
 
 struct cudaGraphicsResource *cuda_vbo_resource;
 
-cudaError_t cudaStatus;
-
 //_______________________________CUDA PART___________________________________________________________________________________________________________
 
 int ThrustExScanWrapper(int *output, int *input, unsigned int numElements)
 {
 	thrust::exclusive_scan(
 		thrust::device_ptr<int>(input),
-		thrust::device_ptr<int>(input + numElements),
+		thrust::device_ptr<int>(input + numElements), // * sizeof(int)?
 		thrust::device_ptr<int>(output)
 		);
 	checkCudaErrorsWithLine("thrust scan failed");
@@ -80,12 +72,15 @@ __global__ void resetValuesKernel(GridVertex * vertices, int vCount)
 {
 	int fullID = min(blockIdx.y * 65535 * THREADS_CNT + blockIdx.x * THREADS_CNT + threadIdx.x, vCount - 1);
 	vertices[fullID].value = 0.0f;
-	//if(fullID > 5508000)
-	//	vertices[fullID].value = 1.2f;
+
+	/*int z = vertices[fullID].id % 31;
+	int y = (vertices[fullID].id / 31) % 31;
+	int x = (vertices[fullID].id / (31 * 31)) % 31;*/
 
 	vertices[fullID].normal = glm::vec3(0);
 }
 
+#define GRID_R2 0.0004
 __constant__ float R4 = GRID_R2 * GRID_R2;
 __global__ void calcGridKernel(glm::vec3 * particles, GridVertex * vertices, int pCount, int vCount, int cnt, int * partitions, int * partitionIdx,
 							   int maxItems, float r, int size, int ttlCount)
@@ -117,13 +112,15 @@ __global__ void calcGridKernel(glm::vec3 * particles, GridVertex * vertices, int
 
 	glm::vec3 diff = vertices[vertexID].pos - p;
 	float dist2 = glm::dot(diff, diff);
-	//float backDist4 = dist2 > GRID_R2 * 2 ? 0 : -__log2f((dist2 / 2) * (dist2 / 2) / GRID_R2) / 1.3f;
-	//float backDist4 = dist2 > GRID_R2 * 2 ? 0 : __fdiv_rd(__fadd_rz(__cosf(__fmul_rz(__fdiv_rz(dist2, __fmul_rz(GRID_R2, 4)), PI)), 1), 1.7f);
 	float backDist4 = __fmul_rz(R4, __frcp_rz((max(__fmul_rz(dist2, dist2), 0.0000001f))));
-	if (backDist4 > 0.01) {
-		vertices[vertexID].normal += diff * backDist4;
-		vertices[vertexID].value += backDist4;
-	}
+	diff *= backDist4;
+	vertices[vertexID].normal += diff;
+	vertices[vertexID].value += backDist4;
+
+	/*atomicAdd(&vertices[vertexID].normal.x, diff.x);
+	atomicAdd(&vertices[vertexID].normal.y, diff.y);
+	atomicAdd(&vertices[vertexID].normal.z, diff.z);
+	atomicAdd(&vertices[vertexID].value,    backDist4);*/
 }
 
 __global__ void resetCubes(GridCube * cubes, int cCount) 
@@ -155,12 +152,12 @@ __global__ void calcCubeIndices(GridVertex * vertices, int * verticesToCubes, in
 	}
 }
 
-__global__ void classifyCubes(GridCube * cubes, int cCount, int * cubesOccupied, int *cubeVerticesCnt)
+__global__ void classifyCubes(GridCube * cubes, int cCount, int * cubesOccupied, int *cubeVerticesCnt, int *vertsCountTable)
 {
 	int id = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, cCount - 1);
 	int cubeIndex = cubes[id].cubeID;
 	cubesOccupied[id] = cubeIndex != 0 && cubeIndex != 255;
-	cubeVerticesCnt[id] = tex1Dfetch(vertsCountTex, cubeIndex);
+	cubeVerticesCnt[id] = vertsCountTable[cubeIndex];
 }
 
 __global__ void compactCubes(int *cubesCompact, int *cubesOccupied, int *cubesOccupiedScan, GridCube *cubes, int cCount)
@@ -174,13 +171,30 @@ __global__ void compactCubes(int *cubesCompact, int *cubesOccupied, int *cubesOc
 
 __device__ void vertexInterp2(GridVertex &v0, GridVertex &v1, float threshold, glm::vec3 &p, glm::vec3 &n)
 {
-	float t = (threshold - v0.value) / (v1.value - v0.value);
+	float t;
+	if (v0.value - threshold < 0.0001f)
+	{
+		t = 0;
+	} 
+	else if (v1.value - threshold < 0.0001f)
+	{
+		t = 1;
+	}
+	else
+	{
+		t = (threshold - v0.value) / (v1.value - v0.value);
+	}
 	p = lerp(v0.pos, v1.pos, t);
 	n = lerp(v0.normal, v1.normal, t);
 	n = glm::normalize(n);
 }
 
-__global__ void generateTriangles(Vertex *triangleVertices, int *cubesCompact, GridCube *cubes, int * cubesToVertices, int *cubeVerticesScan, GridVertex *vertices, int activeCubes, int maxVerts, float threshold)
+__global__ void generateTriangles(
+	Vertex *triangleVertices, 
+	int *cubesCompact, GridCube *cubes, int * cubesToVertices, 
+	int *cubeVerticesScan, GridVertex *vertices, 
+	int *trianglesTable, int *vertsCountTable,
+	int activeCubes, int maxVerts, float threshold)
 {
 	int id = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, activeCubes - 1);
 	id = cubesCompact[id];
@@ -216,10 +230,10 @@ __global__ void generateTriangles(Vertex *triangleVertices, int *cubesCompact, G
 	vertexInterp2(curVertices[3], curVertices[7], threshold, vertlist[11], normlist[11]);
 
 
-	int numVerts = tex1Dfetch(vertsCountTex, currentCube.cubeID);
+	int numVerts = vertsCountTable[currentCube.cubeID];
 	for (int i = 0; i < numVerts; i++)
 	{
-		GLuint edge = tex1Dfetch(triTex, currentCube.cubeID * 16 + i);
+		GLuint edge = trianglesTable[currentCube.cubeID * 16 + i];
 		int index = cubeVerticesScan[id] + i;
 
 		if (index < maxVerts)
@@ -228,8 +242,6 @@ __global__ void generateTriangles(Vertex *triangleVertices, int *cubesCompact, G
 				triangleVertices[index].position[j] = vertlist[edge][j];
 				triangleVertices[index].normal[j] = normlist[edge][j];
 			}
-			triangleVertices[index].texcoord[0] = 0;
-			triangleVertices[index].texcoord[1] = 0;
 		}
 	}
 }
@@ -242,7 +254,7 @@ int Grid::cudaCalcGrid(glm::vec3 * particles_dev, int pCount) {
 	checkCudaErrorsWithLine("failed reseting vertices values");
 
 	int cnt = NEIGHBOURS_3D * partition3D->maxItemsPerPartition;
-	//cnt = ((cnt - 1) / THREADS_CNT + 1) * THREADS_CNT;
+	cnt = ((cnt - 1) / THREADS_CNT + 1) * THREADS_CNT;
 	calcGridKernel<<<getBlocks(cnt * pCount), getThreads(cnt * pCount)>>>(particles_dev, vertices_dev, pCount, numVertices, cnt, 
 		partition3D->partitions_dev, partition3D->partitionIdx_dev, partition3D->maxItemsPerPartition, partition3D->r,
 		partition3D->countx, partition3D->ttlCount);
@@ -263,7 +275,7 @@ int Grid::cudaAnalyzeCubes(float threshold) {
 
 	resetCubes<<<getBlocks(numCubes), getThreads(numCubes)>>>(cubes_dev, numCubes);
 	calcCubeIndices<<<getBlocks(activeVertices * 8), getThreads(activeVertices * 8)>>>(vertices_dev, verticesToCubes_dev, numVertices, verticesCompact_dev, cubes_dev, activeVertices);
-	classifyCubes<<<getBlocks(numCubes), getThreads(numCubes)>>>(cubes_dev, numCubes, cubesOccupied_dev, cubeVerticesCnt_dev);
+	classifyCubes<<<getBlocks(numCubes), getThreads(numCubes)>>>(cubes_dev, numCubes, cubesOccupied_dev, cubeVerticesCnt_dev, vertsCountTable_dev);
 	checkCudaErrorsWithLine("failed classify cubes");
 
 	activeCubes = ThrustExScanWrapper(cubesOccupiedScan_dev, cubesOccupied_dev, numCubes);
@@ -284,7 +296,9 @@ void Grid::cudaComputeSurface(int maxVerts, float threshold) {
 
 	generateTriangles<<<getBlocks(activeCubes), getThreads(activeCubes)>>>(
 		triangleVertices_dev, cubesCompact_dev, cubes_dev, cubesToVertices_dev,
-		cubeVerticesScan_dev, vertices_dev, activeCubes, maxVerts, threshold);
+		cubeVerticesScan_dev, vertices_dev,
+		triTable_dev, vertsCountTable_dev,
+		activeCubes, maxVerts, threshold);
 	checkCudaErrorsWithLine("generate triangles failed");
 
 	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);
@@ -323,14 +337,14 @@ __global__ void initCubesKernel(GridVertex * vertices, int * verticesToCubes, in
 	x = tmpID % count;
 
 	int vID[8];
-	vID[0] = (x*(count+1)     +y)*(count+1)   +z;
-	vID[1] = (x*(count+1)     +y)*(count+1)   +z+1;
-	vID[2] = (x*(count+1)    +(y+1))*(count+1)+z+1;
-	vID[3] = (x*(count+1)    +(y+1))*(count+1)+z;
-	vID[4] = ((x+1)*(count+1) +y)*(count+1)   +z;
-	vID[5] = ((x+1)*(count+1) +y)*(count+1)   +z+1;
-	vID[6] = ((x+1)*(count+1)+(y+1))*(count+1)+z+1;
-	vID[7] = ((x+1)*(count+1)+(y+1))*(count+1)+z;
+	vID[0] = ( x   *(count+1) +  y)    * (count+1) + z;
+	vID[1] = ( x   *(count+1) +  y)    * (count+1) + z+1;
+	vID[2] = ( x   *(count+1) + (y+1)) * (count+1) + z+1;
+	vID[3] = ( x   *(count+1) + (y+1)) * (count+1) + z;
+	vID[4] = ((x+1)*(count+1) +  y)    * (count+1) + z;
+	vID[5] = ((x+1)*(count+1) +  y)    * (count+1) + z+1;
+	vID[6] = ((x+1)*(count+1) + (y+1)) * (count+1) + z+1;
+	vID[7] = ((x+1)*(count+1) + (y+1)) * (count+1) + z;
 #pragma unroll
 	for (int i = 0; i < 8; i++) {
 		verticesToCubes[vID[i] + vCount * i] = fullID;
@@ -417,7 +431,6 @@ void Grid::deleteCudaMemory() {
 	cudaFree(cubeVerticesCnt_dev);
 	cudaFree(cubeVerticesScan_dev);
 
-	cudaFree(edgeTable_dev);
 	cudaFree(triTable_dev);
 	cudaFree(vertsCountTable_dev);
 
@@ -427,18 +440,11 @@ void Grid::deleteCudaMemory() {
 
 void Grid::allocateTextures()
 {
-	checkCudaErrors(cudaMalloc((void **) &edgeTable_dev, 256*sizeof(GLuint)));
-	checkCudaErrors(cudaMemcpy((void *)edgeTable_dev, (void *)edgesTable, 256*sizeof(int), cudaMemcpyHostToDevice));
-	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindUnsigned);
-	checkCudaErrors(cudaBindTexture(0, edgeTex, edgeTable_dev, channelDesc));
-
 	checkCudaErrors(cudaMalloc((void **) &triTable_dev, 256*16*sizeof(GLuint)));
 	checkCudaErrors(cudaMemcpy((void *)triTable_dev, (void *)trianglesTable, 256*16*sizeof(int), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaBindTexture(0, triTex, triTable_dev, channelDesc));
 
 	checkCudaErrors(cudaMalloc((void **) &vertsCountTable_dev, 256*sizeof(GLuint)));
 	checkCudaErrors(cudaMemcpy((void *)vertsCountTable_dev, (void *)vertexCountTable, 256*sizeof(int), cudaMemcpyHostToDevice));
-	checkCudaErrors(cudaBindTexture(0, vertsCountTex, vertsCountTable_dev, channelDesc));
 
 	checkCudaErrorsWithLine("failed mallocing textures");
 }

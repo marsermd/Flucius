@@ -5,10 +5,11 @@
 
 #include "Box.h"
 #include "Partition3D.h"
+#include "Renderable.h"
 
 #include "PSystemStructures.h"
 
-class PSystem {
+class PSystem: public Renderable {
 public:
 	PSystem(float size);
 	~PSystem();
@@ -17,9 +18,21 @@ public:
 	glm::vec3 * getParticles_dev();
 	int getParticlesCount();
 
+	void setRenderer(Renderable* renderDelegate)
+	{
+		this->renderDelegate = renderDelegate;
+	}
+
+	virtual void render()
+	{
+		update();
+		renderDelegate->render();
+	}
+
 	void update();
 
 private:
+	Renderable* renderDelegate;
 	Box box;
 	EmulatedParticles_Thrust * particles_t;
 	EmulatedParticles_Dev * particles_dev;

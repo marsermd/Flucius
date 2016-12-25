@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="cudaHelper.cu" />
+    <CudaCompile Include="neighboursKernel.cu" />
+    <CudaCompile Include="Partition3DKernel.cu" />
+    <CudaCompile Include="vectorHelper.cu" />
+    <CudaCompile Include="PsystemKernel.cu">
+      <Filter>ParticleSystem</Filter>
+    </CudaCompile>
+    <CudaCompile Include="PSystem.cu">
+      <Filter>ParticleSystem</Filter>
+    </CudaCompile>
+    <CudaCompile Include="GridKernel.cu">
+      <Filter>ParticleSystem\Drawers\Grid</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SimplePsystemDrawerKernel.cu">
+      <Filter>ParticleSystem\Drawers\SimpleDrawer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="SimplePsystemDrawer.cpp">
+      <Filter>ParticleSystem\Drawers\SimpleDrawer</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Grid.cpp">
+      <Filter>ParticleSystem\Drawers\Grid</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="objloader.cpp" />
+    <ClCompile Include="runner.cpp" />
+    <ClCompile Include="shader.cpp" />
+    <ClCompile Include="Timer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Box.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="cudaHelper.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="neighbours.h" />
+    <ClInclude Include="objloader.h" />
+    <ClInclude Include="Partition3D.h" />
+    <ClInclude Include="Renderable.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="shader.h" />
+    <ClInclude Include="tables.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="torus.h" />
+    <ClInclude Include="vectorHelper.h" />
+    <ClInclude Include="Vertex.h" />
+    <ClInclude Include="PSystemStructures.h">
+      <Filter>ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="PSystemConstants.h">
+      <Filter>ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="PSystem.h">
+      <Filter>ParticleSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Grid.h">
+      <Filter>ParticleSystem\Drawers\Grid</Filter>
+    </ClInclude>
+    <ClInclude Include="GridStructures.h">
+      <Filter>ParticleSystem\Drawers\Grid</Filter>
+    </ClInclude>
+    <ClInclude Include="SimplePsystemDrawer.h">
+      <Filter>ParticleSystem\Drawers\SimpleDrawer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Flucius 1.1.vcxproj" />
+    <None Include="TransformVertexShader.vertexshader">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="ColorFragmentShader.fragmentshader">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="BilboardGeometryShader.geometryshader">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{7e4a614b-37af-49f7-97a5-e5f761999860}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ParticleSystem">
+      <UniqueIdentifier>{066d819d-d55d-4521-9ef8-0a1775b312df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ParticleSystem\Drawers">
+      <UniqueIdentifier>{20ffe757-ef63-4716-bec9-aa3d25ecd5b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ParticleSystem\Drawers\Grid">
+      <UniqueIdentifier>{353fc0f6-5138-436e-ad9a-57589b853b1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ParticleSystem\Drawers\SimpleDrawer">
+      <UniqueIdentifier>{85580b0c-3bdd-4c62-97d2-909956f610bb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

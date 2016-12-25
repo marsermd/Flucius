@@ -17,7 +17,7 @@
 #define CUDA_CALLABLE_MEMBER
 #endif 
 
-#define GET_CLOSEST_POS(coordinate, r) ((int)((coordinate + EPS) / r))
+#define GET_CLOSEST_POS(coordinate, r) ((int)((coordinate + EPS) / (r)))
 
 // T should have .pos attribute!
 template <typename T> class Partition3D {

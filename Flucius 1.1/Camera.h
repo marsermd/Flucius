@@ -12,10 +12,10 @@ public:
 	Camera(GLFWwindow *window) {
 		timer = new Timer();
 		parentWindow = window;
-		distance = 12;
+		distance = 250;
 		angleX = 0;
 		angleY = 0;
-		projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+		projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 500.0f);
 		react();
 	}
 	~Camera() {

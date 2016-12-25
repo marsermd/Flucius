@@ -13,7 +13,7 @@
 
 class Grid: public Renderable {
 public:
-	Grid();
+	Grid(PSystem* psystem);
 	~Grid();
 
 
@@ -21,23 +21,23 @@ public:
 
 	void setCubeCount(int cnt);//cube count per dimension
 	
-	PSystem pSystem;
 private:
+	PSystem* pSystem;
 	int numVertices;
 	GridVertex *vertices_dev;
 
 	int numCubes;
-	GridCube *cubes_dev;
+	GridCube* cubes_dev;
 
 	Box box; // should always be a cube
 	int count;//cube count per dimension
 	float threshold;//threshold value to determine if vertex is active or not
 	
-	Partition3D<GridVertex> * partition3D;
+	Partition3D<GridVertex>* partition3D;
 
 	GLuint vbo, vao;
 
-	int cudaCalcGrid(glm::vec3 * particles_dev, int pCount);
+	int cudaCalcGrid(glm::vec3* particles_dev, int pCount);
 	int cudaAnalyzeCubes(float threshold);
 	void cudaComputeSurface(int maxVerts, float threshold);
 	void cudaInit(int pCount);

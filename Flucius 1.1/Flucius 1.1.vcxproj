@@ -23,17 +23,18 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="cudaHelper.h" />
     <ClInclude Include="Grid.h" />
-    <ClInclude Include="gridKernel.h" />
     <ClInclude Include="GridStructures.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="neighbours.h" />
     <ClInclude Include="objloader.h" />
     <ClInclude Include="Partition3D.h" />
     <ClInclude Include="PSystem.h" />
+    <ClInclude Include="PSystemConstants.h" />
     <ClInclude Include="PSystemStructures.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="SimplePsystemDrawer.h" />
     <ClInclude Include="tables.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="torus.h" />
@@ -42,17 +43,21 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="cudaHelper.cu" />
-    <CudaCompile Include="Grid.cu" />
-    <CudaCompile Include="GridKernel.cu" />
+    <CudaCompile Include="Grid.cpp" />
+    <CudaCompile Include="GridKernel.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CudaCompile>
     <CudaCompile Include="neighboursKernel.cu" />
     <CudaCompile Include="Partition3DKernel.cu" />
     <CudaCompile Include="PSystem.cu" />
     <CudaCompile Include="PsystemKernel.cu" />
+    <CudaCompile Include="SimplePsystemDrawer.cpp" />
+    <CudaCompile Include="SimplePsystemDrawerKernel.cu" />
     <CudaCompile Include="vectorHelper.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Grid.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="objloader.cpp" />
     <ClCompile Include="runner.cpp" />
@@ -62,6 +67,7 @@
   <ItemGroup>
     <None Include="ColorFragmentShader.fragmentshader" />
     <None Include="Flucius 1.1.vcxproj" />
+    <None Include="BilboardGeometryShader.geometryshader" />
     <None Include="TransformVertexShader.vertexshader" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -157,6 +163,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CudaRuntime>Shared</CudaRuntime>
+      <CodeGeneration>compute_20,sm_21</CodeGeneration>
+      <GenerateLineInfo>true</GenerateLineInfo>
+      <Emulation>false</Emulation>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -201,6 +211,10 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CudaRuntime>Shared</CudaRuntime>
+      <Optimization>O2</Optimization>
+      <TypeInfo>false</TypeInfo>
+      <CodeGeneration>compute_20,sm_21</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
