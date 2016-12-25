@@ -16,7 +16,7 @@
 #define PRESSURE_N 2.0f
 #define REST_DENSITY 1.0f
 #define RELAXATION 5.0f // epselon, or relaxation parameter 
-#define VISCOCITY 0.01f;
+#define VISCOCITY 0.1f;
 #define VORTICITY_EPSILON 5.0f;
 
 //KERNEL FUNCTIONS(in terms of math)
@@ -34,15 +34,6 @@ __device__ glm::vec3 wGradSpiky(glm::vec3 i, glm::vec3 j)
 	return magnitude / (glm::length(r) + EPS) * r;
 }
 
-__device__ float calculateRi(Particle * particles, glm::vec3 curPos, int * neighbours, int nCnt, int id)
-{
-	float ro = 0.0f;
-	for (int i = 0; i < nCnt; i++){
-		ro += wPoly6(curPos, particles[neighbours[id * MAX_NEIGHBOURS + i]].pos);
-	}
-	return ro;
-}
-
 //CUDA KERNELS
 
 __global__ void calculateLambda(EmulatedParticles_Dev particles)
@@ -53,8 +44,8 @@ __global__ void calculateLambda(EmulatedParticles_Dev particles)
 		glm::vec3 curPos = particles.particles[particle].pos;
 		int nCnt = particles.neighboursCnt[particle];
 
-		float pI = calculateRi(particles.particles, curPos, particles.neighbours, nCnt, particle);
-		float cI = (pI / REST_DENSITY) - 1.0f;
+		//Used to calculate CI
+		float rhoI = 0.0f;
 
 		//formula 8, part two
 		float sumGradients = 0.0f;
@@ -62,6 +53,9 @@ __global__ void calculateLambda(EmulatedParticles_Dev particles)
 		// formula 8, part one
 		glm::vec3 sumGradki = glm::vec3(0);
 		for (int i = 0; i < nCnt; i++) {
+			// Adding to RhoI to calculate CI
+			rhoI += wPoly6(curPos, particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]].pos);
+
 			gradient = wGradSpiky(curPos, particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]].pos);
 			gradient /= REST_DENSITY;
 			//calc gradient with respect to other particle
@@ -71,6 +65,7 @@ __global__ void calculateLambda(EmulatedParticles_Dev particles)
 		}
 		sumGradients += glm::length2(sumGradki);
 
+		float cI = (rhoI / REST_DENSITY) - 1.0f;
 		float sumCi = sumGradients + RELAXATION;
 		particles.particles[particle].lambda = -cI / sumCi;
 	}
@@ -108,12 +103,44 @@ __global__ void calculateDeltaPos(EmulatedParticles_Dev particles)
 	}
 }
 
-__global__ void viscocityAndVorticityConfinement(EmulatedParticles_Dev particles)
+__global__ void applyViscocityAndCalcVorticity(EmulatedParticles_Dev particles)
 {
 	int particle = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, particles.count - 1);
 	if (particle < particles.count)
 	{
+		int nCnt = particles.neighboursCnt[particle];
+		glm::vec3 curPos = particles.particles[particle].pos;
+		glm::vec3 velocity = particles.particles[particle].velocity;
 
+		glm::vec3 vAverage = glm::vec3(0);
+		glm::vec3 vorticity = glm::vec3(0);
+		float rhoI = 0.0f;
+		for (int i = 0; i < nCnt; i++) 
+		{
+			Particle other = particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]];
+			float wJ = wPoly6(curPos, other.pos);
+			glm::vec3 deltaVIJ = other.velocity - velocity;
+
+			// Adding to RhoI to calculate CI
+			rhoI += wJ;
+
+			vAverage += deltaVIJ * wJ;
+			vorticity += glm::cross(deltaVIJ, wGradSpiky(curPos, other.pos));
+		}
+
+		velocity += vAverage * VISCOCITY;
+
+		
+		particles.particles[particle].nextVelocity = velocity;
+	}
+}
+
+__global__ void updateVelocityToNewVelocity(EmulatedParticles_Dev particles)
+{
+	int particle = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, particles.count - 1);
+	if (particle < particles.count)
+	{
+		particles.particles[particle].velocity = particles.particles[particle].nextVelocity;
 	}
 }
 
@@ -199,8 +226,6 @@ __global__ void updatePositions(EmulatedParticles_Dev ep)
 	}
 }
 
-
-
 void PSystem::update() {
 	particles_t->setupDev(particles_dev);
 	int count = particles_dev->count;
@@ -227,7 +252,13 @@ void PSystem::update() {
 	updateVelocities << <getBlocks(count), getThreads(count) >> >(*particles_dev, dt);
 	checkCudaErrorsWithLine("update velocities failed!");
 
+	applyViscocityAndCalcVorticity << <getBlocks(count), getThreads(count) >> >(*particles_dev);
+	checkCudaErrorsWithLine("apply voscocity failed!");
+
+	updateVelocityToNewVelocity << <getBlocks(count), getThreads(count) >> >(*particles_dev);
+	checkCudaErrorsWithLine("update Velocity To New Velocity failed!");
+
 	updatePositions << <getBlocks(count), getThreads(count) >> >(*particles_dev);
 	cudaDeviceSynchronize();
-	checkCudaErrorsWithLine("updatePositions failed!");
+	checkCudaErrorsWithLine("update positions failed!");
 }

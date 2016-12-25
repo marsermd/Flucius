@@ -4,6 +4,12 @@
 #include <glm\glm.hpp>
 #include <thrust\device_vector.h>
 
+#ifdef __CUDACC__
+#define CUDA_CALLABLE_MEMBER __host__ __device__
+#else
+#define CUDA_CALLABLE_MEMBER
+#endif 
+
 struct Particle{
 	int id;
 	glm::vec3 pos;
@@ -11,6 +17,16 @@ struct Particle{
 	glm::vec3 velocity;
 	glm::vec3 nextVelocity;
 	float lambda; 
+
+	CUDA_CALLABLE_MEMBER Particle()
+	{
+		id = 0;
+		pos = glm::vec3(0);
+		deltaPos = glm::vec3(0);
+		velocity = glm::vec3(0);
+		nextVelocity = glm::vec3(0);
+		lambda = 0;
+	}
 };
 
 struct EmulatedParticles_Dev{

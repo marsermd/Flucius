@@ -17,13 +17,7 @@ EmulatedParticles_Thrust::EmulatedParticles_Thrust()
 	//neighbours(START_COUNT * MAX_NEIGHBOURS),
 	//neighboursCnt(START_COUNT)
 {
-	Particle added = {
-		glm::vec3(0.0f),
-		0,
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		0
-	}; 
+	Particle added; 
 	positions.resize(START_SIZE, glm::vec3(0.0f));
 	particles.resize(START_SIZE, added);
 	externalForces.resize(START_SIZE, GRAVITY);
@@ -61,9 +55,9 @@ PSystem::PSystem(float size) :
 
 	const int CNT = 20;
 	float dist = PARTICLE_H * 1.0f;
-	for (int x = 2; x < CNT; x++) {
-		for (int y = 10; y < 10 + CNT; y++) {
-			for (int z = 2; z < CNT; z++) {
+	for (int x = 4; x < CNT; x++) {
+		for (int y = 1; y < 1 + CNT; y++) {
+			for (int z = 4; z < CNT; z++) {
 				addParticle(glm::vec3(x * dist + rand() % 100 * 0.01f , 2.0f + y * dist + rand() % 100 * 0.01f, z * dist + rand() % 100 * 0.01f));
 				//addParticle(glm::vec3(1.0f + x * PARTICLE_R, 2.0f + x * (z - 18) * (z - 17) * PARTICLE_R / 300, 1.0f + z * PARTICLE_R));
 			}
@@ -85,13 +79,10 @@ glm::vec3 * PSystem::getParticles_dev() {
 }
 
 void PSystem::addParticle(glm::vec3 pos) {
-	Particle added = {
-		pos,
-		particles_t->count,
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		0
-	};
+	Particle added;
+	added.pos = pos;
+	added.id = particles_t->count;
+
 	if (particles_t->count == particles_t->positions.size()) {
 		int newSize = max(particles_t->count * 2, 100);
 		particles_t->positions.resize(newSize, glm::vec3(0.0f));
