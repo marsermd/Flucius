@@ -67,7 +67,6 @@
   <ItemGroup>
     <None Include="ColorFragmentShader.fragmentshader" />
     <None Include="Flucius 1.1.vcxproj" />
-    <None Include="BilboardGeometryShader.geometryshader" />
     <None Include="TransformVertexShader.vertexshader" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

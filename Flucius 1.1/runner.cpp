@@ -116,10 +116,11 @@ int main() {
 	GLuint programID = loadShaders("TransformVertexShader.vertexshader", "ColorFragmentShader.fragmentshader");
 
 	//display range : 0.1 unit <-> 100 units
-	Camera camera(window);
+	Camera camera(window, glm::vec3(35, 20, 35), 130);
 
-	PSystem pSystem = PSystem(90.0f);
+	PSystem pSystem = PSystem(70.0f);
 	SimplePsystemDrawer pSystemDrawer = SimplePsystemDrawer(&pSystem);
+	Grid pSystemGrid = Grid(&pSystem);
 	pSystem.setRenderer(&pSystemDrawer);
 
 	float a = 0;
@@ -152,6 +153,7 @@ int main() {
 		PointLightSetup(programID, pointLight);
 
 		pSystemDrawer.modelMatrixID = modelMatrixID;
+		pSystemGrid.modelMatrixID = modelMatrixID;
 		pSystem.render();
 
 		glm::mat4 initial = glm::translate(glm::scale(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f));

@@ -13,14 +13,15 @@
 //_______________________________CUDA PART___________________________________________________________________________________________________________
 
 
-__global__ void createParticleQuadsKernel(glm::vec3* positions, int pCount, Vertex* vertices)
+__global__ void createParticleQuadsKernel(Particle* particles, int pCount, Vertex* vertices)
 {
 	int id = threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT;
 	if (id < pCount)
 	{
 #pragma unroll
 		for (int j = 0; j < 3; j++) {
-			vertices[id].position[j] = positions[id][j];
+			vertices[id].position[j] = particles[id].pos[j];
+			vertices[id].normal[j] = __saturatef((0.8 + particles[id].lambda * 50));
 		}
 	}
 }

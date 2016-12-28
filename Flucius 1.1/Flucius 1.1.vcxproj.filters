@@ -8,9 +8,6 @@
     <CudaCompile Include="PsystemKernel.cu">
       <Filter>ParticleSystem</Filter>
     </CudaCompile>
-    <CudaCompile Include="PSystem.cu">
-      <Filter>ParticleSystem</Filter>
-    </CudaCompile>
     <CudaCompile Include="GridKernel.cu">
       <Filter>ParticleSystem\Drawers\Grid</Filter>
     </CudaCompile>
@@ -22,6 +19,9 @@
     </CudaCompile>
     <CudaCompile Include="Grid.cpp">
       <Filter>ParticleSystem\Drawers\Grid</Filter>
+    </CudaCompile>
+    <CudaCompile Include="PSystem.cu">
+      <Filter>ParticleSystem</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -73,9 +73,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="ColorFragmentShader.fragmentshader">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="BilboardGeometryShader.geometryshader">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

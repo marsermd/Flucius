@@ -17,18 +17,26 @@ EmulatedParticles_Thrust::EmulatedParticles_Thrust()
 	//neighbours(START_COUNT * MAX_NEIGHBOURS),
 	//neighboursCnt(START_COUNT)
 {
-	Particle added; 
-	positions.resize(START_SIZE, glm::vec3(0.0f));
-	particles.resize(START_SIZE, added);
-	externalForces.resize(START_SIZE, GRAVITY);
-	neighbours.resize(START_SIZE * MAX_NEIGHBOURS, 0.0f);
-	neighboursCnt.resize(START_SIZE, 0.0f);
 	count = 0;
 }
 
-void EmulatedParticles_Thrust::setupDev(EmulatedParticles_Dev * particles_dev) {
+void EmulatedParticles_Thrust::pushToDevice()
+{
+	particles = thrust::device_vector<Particle>(particles_host);
+	prev_pos = thrust::device_vector<glm::vec3>(positions_host);
+
+	vorticities.resize(count, glm::vec3(0.0f));
+	externalForces.resize(count, GRAVITY);
+	neighbours.resize(count * MAX_NEIGHBOURS, 0);
+	neighboursCnt.resize(count, 0);
+}
+
+void EmulatedParticles_Thrust::setupDev(EmulatedParticles_Dev * particles_dev) 
+{
 	particles_dev->count = count;
-	particles_dev->prevPos        = cudaGetRawRef<glm::vec3>(&positions);
+
+	particles_dev->prevPos        = cudaGetRawRef<glm::vec3>(&prev_pos);
+	particles_dev->vorticities    = cudaGetRawRef<glm::vec3>(&vorticities);
 	particles_dev->particles      =  cudaGetRawRef<Particle>(&particles);
 	particles_dev->externalForces = cudaGetRawRef<glm::vec3>(&externalForces);
 	particles_dev->neighbours     =       cudaGetRawRef<int>(&neighbours);
@@ -40,30 +48,24 @@ PSystem::PSystem(float size) :
 	particles_t(new EmulatedParticles_Thrust()),
 	particles_dev(new EmulatedParticles_Dev())
 {
-
-	/*addParticle(glm::vec3(5.5f, 5.5f, 5.5f));
-	addParticle(glm::vec3(5.5f, 5.5f, 0.5f));
-	addParticle(glm::vec3(5.5f, 0.5f, 5.5f));
-	addParticle(glm::vec3(5.5f, 0.5f, 0.5f));
-	addParticle(glm::vec3(0.4f, 5.5f, 5.5f));
-	addParticle(glm::vec3(0.4f, 5.5f, 0.5f));
-	addParticle(glm::vec3(0.5f, 0.5f, 5.5f));
-	addParticle(glm::vec3(0.5f, 0.5f, 0.5f));*/
-	//addParticle(glm::vec3(1 + 1 * PARTICLE_R * 2.0f, 1, 1 + 1 * PARTICLE_R * 2.0f));
-	//addParticle(glm::vec3(1 + 1 * PARTICLE_R * 1, 1, 1 + 1 * PARTICLE_R * 1));
-	//addParticle(glm::vec3(5 * PARTICLE_R + 1 * PARTICLE_R, 5 * PARTICLE_R, 5 * PARTICLE_R + 3 * PARTICLE_R));
-
-	const int CNT = 20;
-	float dist = PARTICLE_H * 1.0f;
-	for (int x = 4; x < CNT; x++) {
-		for (int y = 1; y < 1 + CNT; y++) {
-			for (int z = 4; z < CNT; z++) {
-				addParticle(glm::vec3(x * dist + rand() % 100 * 0.01f , 2.0f + y * dist + rand() % 100 * 0.01f, z * dist + rand() % 100 * 0.01f));
-				//addParticle(glm::vec3(1.0f + x * PARTICLE_R, 2.0f + x * (z - 18) * (z - 17) * PARTICLE_R / 300, 1.0f + z * PARTICLE_R));
+	int cnt = 30;
+	float dist = PARTICLE_H * 0.6f;
+	float randomScale = 0.01f;
+	for (int x = 0; x < cnt; x++) {
+		for (int y = 0; y < cnt; y++) {
+			for (int z = 0; z < cnt; z++) {
+				glm::vec3 pos = glm::vec3(20, 0, 20) + glm::vec3(x, y, z) * dist + 
+					glm::vec3(
+						(rand() % 1000) * 0.001f * randomScale,
+						(rand() % 1000) * 0.001f * randomScale,
+						(rand() % 1000) * 0.001f * randomScale
+					);
+				addParticle(pos);
 			}
 		}
 	}
 
+	particles_t->pushToDevice();
 	particles_t->setupDev(particles_dev);
 
 	partition3D = new Partition3D<Particle>(particles_dev->particles, particles_dev->count, box, PARTICLE_H);
@@ -74,8 +76,12 @@ PSystem::~PSystem() {
 	delete particles_t;
 }
 
-glm::vec3 * PSystem::getParticles_dev() {
-	return thrust::raw_pointer_cast(particles_t->positions.data());
+Particle* PSystem::getParticles_dev() {
+	return particles_dev->particles;
+}
+
+glm::vec3* PSystem::getParticlesPositions_dev() {
+	return particles_dev->prevPos;
 }
 
 void PSystem::addParticle(glm::vec3 pos) {
@@ -83,20 +89,10 @@ void PSystem::addParticle(glm::vec3 pos) {
 	added.pos = pos;
 	added.id = particles_t->count;
 
-	if (particles_t->count == particles_t->positions.size()) {
-		int newSize = max(particles_t->count * 2, 100);
-		particles_t->positions.resize(newSize, glm::vec3(0.0f));
-		particles_t->particles.resize(newSize, added);
-		particles_t->externalForces.resize(newSize, GRAVITY);
-		particles_t->neighbours.resize(newSize * MAX_NEIGHBOURS, 0);
-		particles_t->neighboursCnt.resize(newSize, 0);
-	}
-	particles_t->positions[particles_t->count] = glm::vec3(pos);
-	particles_t->particles[particles_t->count] = added;
+	particles_t->positions_host.push_back(pos);
+	particles_t->particles_host.push_back(added);
 
 	particles_t->count++;
-	//checkCudaErrorsWithLine("adding particles failed!");
-
 }
 
 int PSystem::getParticlesCount() {

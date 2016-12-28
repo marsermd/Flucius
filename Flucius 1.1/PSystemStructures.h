@@ -31,22 +31,28 @@ struct Particle{
 
 struct EmulatedParticles_Dev{
 	int count;
-	glm::vec3 * prevPos;
-	Particle * particles;
-	glm::vec3 * externalForces; 
+	glm::vec3* prevPos;
+	glm::vec3* vorticities;
+	Particle* particles;
+	glm::vec3* externalForces;
 	int* neighbours;
 	int* neighboursCnt;
 };
 
 struct EmulatedParticles_Thrust{
 	int count;
-	thrust::device_vector<glm::vec3> positions;
+	thrust::host_vector<glm::vec3> positions_host;
+	thrust::host_vector<Particle> particles_host;
+
+	thrust::device_vector<glm::vec3> prev_pos;
+	thrust::device_vector<glm::vec3> vorticities;
 	thrust::device_vector<Particle> particles;
 	thrust::device_vector<glm::vec3> externalForces;
 	thrust::device_vector<int> neighbours;
 	thrust::device_vector<int> neighboursCnt;
 
 	EmulatedParticles_Thrust();
+	void pushToDevice();
 	void setupDev(EmulatedParticles_Dev * particles);
 };
 

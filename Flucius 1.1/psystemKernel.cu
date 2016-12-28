@@ -10,28 +10,34 @@
 #include "neighbours.h"
 #include "PSystemConstants.h"
 
-#define ITERATIONS_COUNT 1
+#define ITERATIONS_COUNT 3
 #define DELTA_Q (0.1f*PARTICLE_H)
-#define PRESSURE_K 0.1f
-#define PRESSURE_N 2.0f
-#define REST_DENSITY 1.0f
+#define PRESSURE_K 0.01f
+#define REST_DENSITY 0.5f
+#define ONE_OVER_REST_DENSITY 2.0f
 #define RELAXATION 5.0f // epselon, or relaxation parameter 
-#define VISCOCITY 0.1f;
+#define VISCOCITY 0.07f;
 #define VORTICITY_EPSILON 5.0f;
 
 //KERNEL FUNCTIONS(in terms of math)
 __device__ float wPoly6(glm::vec3 i, glm::vec3 j)
 {
 	float r = glm::length(i - j);
-	return r > PARTICLE_H ? 0 : POLY6_CONST * powf(PARTICLE_H * PARTICLE_H - r * r, 3) / PARTICLE_H9;
+	float tmp = PARTICLE_H * PARTICLE_H - r * r;
+	return r > PARTICLE_H ? 0 : POLY6_CONST * tmp * tmp * tmp / PARTICLE_H9;
 }
 
 __device__ glm::vec3 wGradSpiky(glm::vec3 i, glm::vec3 j)
 {
 	glm::vec3 r = i - j;
-	float diff = PARTICLE_H - glm::length(r);
-	float magnitude = (SPIKY_CONST / PARTICLE_H6) * diff * diff;
-	return magnitude / (glm::length(r) + EPS) * r;
+	float length = glm::length(r);
+	float diff = PARTICLE_H - length;
+	if (diff < 0 || length < EPS)
+	{
+		return glm::vec3(0, 0, 0);
+	}
+	float magnitude = -(SPIKY_CONST / PARTICLE_H6) * diff * diff;
+	return magnitude * r / length;
 }
 
 //CUDA KERNELS
@@ -47,17 +53,20 @@ __global__ void calculateLambda(EmulatedParticles_Dev particles)
 		//Used to calculate CI
 		float rhoI = 0.0f;
 
-		//formula 8, part two
-		float sumGradients = 0.0f;
-		glm::uvec3 gradient;
 		// formula 8, part one
 		glm::vec3 sumGradki = glm::vec3(0);
-		for (int i = 0; i < nCnt; i++) {
+		//formula 8, part two
+		float sumGradients = 0.0f;
+		glm::vec3 gradient;
+		for (int i = 0; i < nCnt; i++) 
+		{
+			glm::vec3 otherPos = particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]].pos;
+			
 			// Adding to RhoI to calculate CI
-			rhoI += wPoly6(curPos, particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]].pos);
+			rhoI += wPoly6(curPos, otherPos);
 
-			gradient = wGradSpiky(curPos, particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]].pos);
-			gradient /= REST_DENSITY;
+			gradient = wGradSpiky(curPos, otherPos);
+			gradient *= ONE_OVER_REST_DENSITY;
 			//calc gradient with respect to other particle
 			sumGradients += glm::length2(gradient);
 			//calc gradient with respect to current particle
@@ -65,7 +74,7 @@ __global__ void calculateLambda(EmulatedParticles_Dev particles)
 		}
 		sumGradients += glm::length2(sumGradki);
 
-		float cI = (rhoI / REST_DENSITY) - 1.0f;
+		float cI = (rhoI * ONE_OVER_REST_DENSITY) - 1.0f;
 		float sumCi = sumGradients + RELAXATION;
 		particles.particles[particle].lambda = -cI / sumCi;
 	}
@@ -87,7 +96,7 @@ __global__ void calculateDeltaPos(EmulatedParticles_Dev particles)
 			//throw an error
 			*(int*)0 = 0;
 		}
-		tensileInstabilityScale = 1 / tensileInstabilityScale;
+		tensileInstabilityScale = 1.0f / tensileInstabilityScale;
 
 		glm::vec3 delta = glm::vec3(0.0f);
 
@@ -96,10 +105,10 @@ __global__ void calculateDeltaPos(EmulatedParticles_Dev particles)
 		for (int i = 0; i < nCnt; i++) {
 			other = particles.neighbours[i + particle * MAX_NEIGHBOURS];
 			kTerm = wPoly6(curPos, glm::vec3(particles.particles[other].pos)) * tensileInstabilityScale;
-			sCorr = -1.0f * PRESSURE_K * pow(kTerm, PRESSURE_N);
+			sCorr = -PRESSURE_K * kTerm * kTerm; // that means kterm ^ PRESSURE_N
 			delta += (lambda + particles.particles[other].lambda + sCorr) * wGradSpiky(curPos, glm::vec3(particles.particles[other].pos));
 		}
-		particles.particles[particle].deltaPos = delta / REST_DENSITY;
+		particles.particles[particle].deltaPos = delta * ONE_OVER_REST_DENSITY;
 	}
 }
 
@@ -114,15 +123,11 @@ __global__ void applyViscocityAndCalcVorticity(EmulatedParticles_Dev particles)
 
 		glm::vec3 vAverage = glm::vec3(0);
 		glm::vec3 vorticity = glm::vec3(0);
-		float rhoI = 0.0f;
 		for (int i = 0; i < nCnt; i++) 
 		{
 			Particle other = particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]];
 			float wJ = wPoly6(curPos, other.pos);
 			glm::vec3 deltaVIJ = other.velocity - velocity;
-
-			// Adding to RhoI to calculate CI
-			rhoI += wJ;
 
 			vAverage += deltaVIJ * wJ;
 			vorticity += glm::cross(deltaVIJ, wGradSpiky(curPos, other.pos));
@@ -130,8 +135,35 @@ __global__ void applyViscocityAndCalcVorticity(EmulatedParticles_Dev particles)
 
 		velocity += vAverage * VISCOCITY;
 
-		
 		particles.particles[particle].nextVelocity = velocity;
+		particles.vorticities[particle] = vorticity;
+	}
+}
+
+__global__ void applyVorticity(EmulatedParticles_Dev particles, float dt)
+{
+	int particle = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, particles.count - 1);
+	if (particle < particles.count)
+	{
+		int nCnt = particles.neighboursCnt[particle];
+		glm::vec3 curPos = particles.particles[particle].pos;
+		glm::vec3 velocity = particles.particles[particle].velocity;
+
+		glm::vec3 vorticityGradient = glm::vec3(0);
+		for (int i = 0; i < nCnt; i++)
+		{
+			Particle other = particles.particles[particles.neighbours[particle * MAX_NEIGHBOURS + i]];
+			vorticityGradient += glm::length(particles.vorticities[i]) * wGradSpiky(curPos, other.pos);
+		}
+
+		if (glm::length(vorticityGradient) > EPS)
+		{
+			vorticityGradient = glm::normalize(vorticityGradient);
+		}
+
+		glm::vec3 vorticity = particles.vorticities[particle];
+
+		particles.particles[particle].nextVelocity += glm::cross(vorticityGradient, vorticity) * dt * VORTICITY_EPSILON;
 	}
 }
 
@@ -151,6 +183,12 @@ __global__ void applyExternalForces(EmulatedParticles_Dev particles, float dt)
 	if (particle < particles.count) {
 		int id = particles.particles[particle].id;
 		particles.particles[particle].velocity += particles.externalForces[id] * dt;
+
+		if (particles.particles[particle].pos.x > 30 && particles.particles[particle].pos.x < 40 && particles.particles[particle].pos.z > 70)
+		{
+		//	particles.particles[particle].velocity += glm::vec3(0, 0, -30.0f) * dt;
+		}
+
 		particles.particles[particle].pos = particles.prevPos[id] + dt * particles.particles[particle].velocity;
 	}
 }
@@ -160,40 +198,40 @@ __global__ void boxCollisionResponse(EmulatedParticles_Dev ep, Box box)
 	int particle = threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT;
 	if (particle < ep.count)
 	{
-		if (ep.particles[particle].pos.z < 0){
-			ep.particles[particle].pos.z = EPS;
+		if (ep.particles[particle].pos.z < 0) {
+			ep.particles[particle].pos.z *= -1;
 			glm::vec3 normal = glm::vec3(0.0f, 0.0f, 1.0f);
-			glm::vec3 reflectedDir = ep.particles[particle].velocity - glm::vec3(2.0f*(normal*(glm::dot(ep.particles[particle].velocity, normal))));
+			glm::vec3 reflectedDir = ep.particles[particle].velocity - 2.0f*glm::dot(ep.particles[particle].velocity, normal);
 			ep.particles[particle].velocity.z = reflectedDir.z;
 		}
-		if (ep.particles[particle].pos.z > box.size.z){
-			ep.particles[particle].pos.z = box.size.z - EPS;
+		if (ep.particles[particle].pos.z > box.size.z) {
+			ep.particles[particle].pos.z = 2 * box.size.z - ep.particles[particle].pos.z;
 			glm::vec3 normal = glm::vec3(0.0f, 0.0f, -1.0f);
-			glm::vec3 reflectedDir = ep.particles[particle].velocity - glm::vec3(2.0f*(normal*(glm::dot(ep.particles[particle].velocity, normal))));
+			glm::vec3 reflectedDir = ep.particles[particle].velocity - 2.0f*glm::dot(ep.particles[particle].velocity, normal);
 			ep.particles[particle].velocity.z = reflectedDir.z;
 		}
-		if (ep.particles[particle].pos.y < 0){
-			ep.particles[particle].pos.y = EPS;
+		if (ep.particles[particle].pos.y < 0) {
+			ep.particles[particle].pos.y *= -1;
 			glm::vec3 normal = glm::vec3(0.0f, 1.0f, 0.0f);
-			glm::vec3 reflectedDir = ep.particles[particle].velocity - glm::vec3(2.0f*(normal*(glm::dot(ep.particles[particle].velocity, normal))));
+			glm::vec3 reflectedDir = ep.particles[particle].velocity - 2.0f*glm::dot(ep.particles[particle].velocity, normal);
 			ep.particles[particle].velocity.y = reflectedDir.y;
 		}
-		if (ep.particles[particle].pos.y > box.size.y){
-			ep.particles[particle].pos.y = box.size.y - EPS;
+		if (ep.particles[particle].pos.y > box.size.y) {
+			ep.particles[particle].pos.y = 2 * box.size.y - ep.particles[particle].pos.y;
 			glm::vec3 normal = glm::vec3(0.0f, -1.0f, 0.0f);
-			glm::vec3 reflectedDir = ep.particles[particle].velocity - glm::vec3(2.0f*(normal*(glm::dot(ep.particles[particle].velocity, normal))));
+			glm::vec3 reflectedDir = ep.particles[particle].velocity - 2.0f*glm::dot(ep.particles[particle].velocity, normal);
 			ep.particles[particle].velocity.y = reflectedDir.y;
 		}
-		if (ep.particles[particle].pos.x < 0){
-			ep.particles[particle].pos.x = EPS;
+		if (ep.particles[particle].pos.x < 0) {
+			ep.particles[particle].pos.x *= -1;
 			glm::vec3 normal = glm::vec3(1.0f, 0.0f, 0.0f);
-			glm::vec3 reflectedDir = ep.particles[particle].velocity - glm::vec3(2.0f*(normal*(glm::dot(ep.particles[particle].velocity, normal))));
+			glm::vec3 reflectedDir = ep.particles[particle].velocity - 2.0f*glm::dot(ep.particles[particle].velocity, normal);
 			ep.particles[particle].velocity.x = reflectedDir.x;
 		}
-		if (ep.particles[particle].pos.x > box.size.x){
-			ep.particles[particle].pos.x = box.size.x - EPS;
+		if (ep.particles[particle].pos.x > box.size.x) {
+			ep.particles[particle].pos.x = 2 * box.size.x - ep.particles[particle].pos.x;
 			glm::vec3 normal = glm::vec3(-1.0f, 0.0f, 0.0f);
-			glm::vec3 reflectedDir = ep.particles[particle].velocity - glm::vec3(2.0f*(normal*(glm::dot(ep.particles[particle].velocity, normal))));
+			glm::vec3 reflectedDir = ep.particles[particle].velocity - 2.0f*glm::dot(ep.particles[particle].velocity, normal);
 			ep.particles[particle].velocity.x = reflectedDir.x;
 		}
 	}
@@ -229,14 +267,14 @@ __global__ void updatePositions(EmulatedParticles_Dev ep)
 void PSystem::update() {
 	particles_t->setupDev(particles_dev);
 	int count = particles_dev->count;
-	float dt = 0.01f;
+	float dt = 0.016f;
 
 	applyExternalForces << <getBlocks(count), getThreads(count) >> >(*particles_dev, dt);
 	checkCudaErrorsWithLine("apply forces failed!");
 
 	cudaFindKNeighbors(particles_dev->particles, particles_dev->count, partition3D, particles_dev->neighbours, particles_dev->neighboursCnt);
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < ITERATIONS_COUNT; i++) {
 		calculateLambda << <getBlocks(count), getThreads(count) >> >(*particles_dev);
 		checkCudaErrorsWithLine("failed calculating lamdas!");
 
@@ -254,6 +292,9 @@ void PSystem::update() {
 
 	applyViscocityAndCalcVorticity << <getBlocks(count), getThreads(count) >> >(*particles_dev);
 	checkCudaErrorsWithLine("apply voscocity failed!");
+
+	applyVorticity << <getBlocks(count), getThreads(count) >> >(*particles_dev, dt);
+	checkCudaErrorsWithLine("apply vorticity failed!");
 
 	updateVelocityToNewVelocity << <getBlocks(count), getThreads(count) >> >(*particles_dev);
 	checkCudaErrorsWithLine("update Velocity To New Velocity failed!");

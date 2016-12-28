@@ -15,7 +15,8 @@ public:
 	~PSystem();
 
 	void addParticle(glm::vec3 pos);
-	glm::vec3 * getParticles_dev();
+	Particle* getParticles_dev();
+	glm::vec3* getParticlesPositions_dev();
 	int getParticlesCount();
 
 	void setRenderer(Renderable* renderDelegate)
@@ -30,6 +31,11 @@ public:
 	}
 
 	void update();
+
+	Box getBox()
+	{
+		return box;
+	}
 
 private:
 	Renderable* renderDelegate;

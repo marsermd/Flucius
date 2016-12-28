@@ -2,18 +2,18 @@
 #include "cudaHelper.h"
 #include "PSystemConstants.h"
 
-Grid::Grid(PSystem* pSystem): 
+Grid::Grid(PSystem* pSystem) :
 	count(120),
-	box(Box(glm::vec3(-3, -3, -3), 6.0f))
+	box(pSystem->getBox())
 {
 	this->pSystem = pSystem;
 	numVertices = (count + 1) * (count + 1) * (count + 1);
 	numCubes = count * count * count;
 	createVBO(numVertices);
 
-	threshold = 1;
+	threshold = 1.0f;
 	cudaInit(pSystem->getParticlesCount());
-	partition3D = new Partition3D<GridVertex>(vertices_dev, numVertices, box, PARTICLE_H * 2.2f);
+	partition3D = new Partition3D<GridVertex>(vertices_dev, numVertices, box, PARTICLE_H * 2.0f);
 	cudaRestoreCVConnections();
 }
 
@@ -34,7 +34,7 @@ void Grid::setCubeCount(int cnt) {
 void Grid::render() {
 	modelMatrix = glm::translate(box.pos);
 	
-	cudaCalcGrid(pSystem->getParticles_dev(), pSystem->getParticlesCount());
+	cudaCalcGrid(pSystem->getParticlesPositions_dev(), pSystem->getParticlesCount());
 	int totalVertices = cudaAnalyzeCubes(threshold);
 	cudaComputeSurface(numVertices, threshold);
 

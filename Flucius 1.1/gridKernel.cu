@@ -80,7 +80,7 @@ __global__ void resetValuesKernel(GridVertex * vertices, int vCount)
 	vertices[fullID].normal = glm::vec3(0);
 }
 
-#define GRID_R2 0.0004
+#define GRID_R2 1.0f
 __constant__ float R4 = GRID_R2 * GRID_R2;
 __global__ void calcGridKernel(glm::vec3 * particles, GridVertex * vertices, int pCount, int vCount, int cnt, int * partitions, int * partitionIdx,
 							   int maxItems, float r, int size, int ttlCount)

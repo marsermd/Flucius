@@ -27,6 +27,7 @@ out Vertex {
         vec3  lightDir;
         vec3  viewDir;
         float distance;
+		vec3 color;
 } vert;
 
 void main() {
@@ -38,5 +39,5 @@ void main() {
 	vert.lightDir = vec3(lightDir);
 	vert.viewDir  = transform.cameraPosition - vec3(vertex);
 	vert.distance = length(lightDir);
-
+	vert.color = normal;
  }

@@ -9,10 +9,12 @@
 
 class Camera {
 public:
-	Camera(GLFWwindow *window) {
+	Camera(GLFWwindow *window, glm::vec3 center, float distance):
+		center(center),
+		distance(distance)
+	{
 		timer = new Timer();
 		parentWindow = window;
-		distance = 250;
 		angleX = 0;
 		angleY = 0;
 		projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 500.0f);
@@ -34,6 +36,7 @@ private:
 	glm::mat4 matrix;
 	glm::mat4 projection;
 	glm::mat4 view;
+	glm::vec3 center;
 	float distance;
 	float angleX; // degrees
 	float angleY; // degrees

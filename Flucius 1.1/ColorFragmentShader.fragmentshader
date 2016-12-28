@@ -23,6 +23,7 @@ in Vertex {
         vec3  lightDir;
         vec3  viewDir;
         float distance;
+		vec3 color;
 } vert;
 
 out vec4 color;
@@ -42,7 +43,7 @@ void main() {
 	float NdotL = max(dot(normal, lightDir), 0.0);
     color += material.diffuse * light.diffuse * NdotL * attenuation;
 
-	color = vec4(1.0, 1.0, 1.0, 1.0);
+	color = vec4(vert.color, 1.0);
 
 //	float RdotVpow = max(pow(dot(reflect(-lightDir, normal), viewDir), material.shininess), 0.0);
 //    color += material.specular * light.specular * RdotVpow * attenuation;
