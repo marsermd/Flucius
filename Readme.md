@@ -14,3 +14,10 @@ Windows
 Opengl
 
 To compile this project you would need VS 2013 and CUDA Computing Toolkit V7.5
+
+Hotkeys
+========================
+- Use arrows to control camera rotation
+- W/A/S/D to control gravity
+- E/R Decrease/Increase viscosity
+- T/Y Decrease/Increae solver iteration count
