@@ -1,7 +1,7 @@
 #ifndef PSYSTEMCONSTANTS_H
 #define PSYSTEMCONSTANTS_H
 
-#define PI 3.1415f
+#define PI 3.1415927f
 #define POLY6_CONST 1.5666814f
 #define SPIKY_CONST 14.323944f
 

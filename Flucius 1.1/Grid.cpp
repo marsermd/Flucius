@@ -1,6 +1,8 @@
 #include "Grid.h"
 #include "PSystemConstants.h"
 
+#include <glm\gtx\transform.hpp>
+
 Grid::Grid(PSystem* pSystem) :
 	count(120),
 	box(pSystem->getBox())
@@ -23,7 +25,6 @@ Grid::~Grid()	{
 	cudaClear();
 };
 
-
 void Grid::setCubeCount(int cnt) {
 	cudaClear();
 	count = cnt;
@@ -42,4 +43,38 @@ void Grid::render() {
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, totalVertices);
 	glBindVertexArray(0);
+}
+
+void Grid::createVBO(int size)
+{
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	// create buffer object
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	// initialize buffer object
+	glBufferData(GL_ARRAY_BUFFER, size * sizeof(Vertex), 0, GL_DYNAMIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+		sizeof(Vertex), (const GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+		sizeof(Vertex), (const GLvoid*)(sizeof(float[3])));
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+		sizeof(Vertex), (const GLvoid*)(sizeof(float[3]) + sizeof(float[2])));
+	glEnableVertexAttribArray(2);
+}
+
+void Grid::deleteVBO()
+{
+	glBindBuffer(1, vbo);
+	glDeleteBuffers(1, &vbo);
+	vbo = 0;
+	glDeleteVertexArrays(1, &vao);
+	vao = 0;
 }

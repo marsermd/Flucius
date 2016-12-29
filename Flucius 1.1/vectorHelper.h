@@ -1,9 +1,6 @@
 #ifndef VECTOR_HELPER_H
 #define VECTOR_HELPER_H
 #include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <math.h>
-#include <GL/glew.h>
 
 void PushBack(thrust::host_vector<int>& vector, int i);
 void Clear(thrust::host_vector<int>& vector);

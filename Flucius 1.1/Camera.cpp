@@ -1,4 +1,27 @@
 #include "Camera.h"
+#include <glm/gtc/matrix_transform.inl>
+
+Camera::Camera(GLFWwindow* window, glm::vec3 center, float distance) :
+	center(center),
+	distance(distance)
+{
+	timer = new Timer();
+	parentWindow = window;
+	angleX = 0;
+	angleY = 0;
+	projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 500.0f);
+	react();
+}
+
+Camera::~Camera()
+{
+	delete timer;
+}
+
+glm::mat4 Camera::getMatrix()
+{
+	return matrix;
+}
 
 glm::vec3 Camera::getPosition() {
 	float aX = glm::radians(angleX);

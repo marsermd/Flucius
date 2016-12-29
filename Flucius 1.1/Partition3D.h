@@ -1,15 +1,7 @@
 #ifndef PARTITION3D_H
 #define PARTITION3D_H
 
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include "vectorHelper.h"
-
-#include <math.h>
-#include <GL/glew.h>
 #include "Box.h"
-
-#include "GridStructures.h"
 
 #ifdef __CUDACC__
 #define CUDA_CALLABLE_MEMBER __host__ __device__
@@ -22,7 +14,6 @@
 // T should have .pos attribute!
 template <typename T> class Partition3D {
 public:
-
 	int countx, county, countz, ttlCount;
 	float r;
 
@@ -30,21 +21,8 @@ public:
 	int* partitionIdx_dev;
 	int maxItemsPerPartition;
 
-	Partition3D<T>::Partition3D(T * elements_dev, int eCount, Box boundingBox, float radius) {
-		r = radius;
-		countx = ceil((boundingBox.size.x + EPS) / radius);
-		county = ceil((boundingBox.size.y + EPS) / radius);
-		countz = ceil((boundingBox.size.z + EPS) / radius);
-		ttlCount = countx * county * countz;
-		printf("%d, %d, %d\n", countx, county, countz);
-
-		cudaInit(eCount);
-		oldECount = eCount;
-		update(elements_dev, eCount);
-	}
-	~Partition3D() {
-		cudaCleanup();
-	}
+	Partition3D<T>::Partition3D(T * elements_dev, int eCount, Box boundingBox, float radius);
+	~Partition3D();
 
 	void update(T * elements_dev, int eCount);
 

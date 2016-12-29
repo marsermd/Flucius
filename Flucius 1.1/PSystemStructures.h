@@ -29,7 +29,7 @@ namespace SPH
 		float deltaQ;
 		float pressureK;
 		float oneOverRestDencity;
-		float relaxation; // epselon, or relaxation parameter 
+		float relaxation;
 		float viscosity;
 		float vorticityEpsilon;
 		float gravity[3];

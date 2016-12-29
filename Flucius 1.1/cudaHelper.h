@@ -2,7 +2,6 @@
 #define CUDA_HELPER_H
 
 #include <cuda_runtime.h>
-#include <thrust\device_ptr.h>
 #include <thrust\detail\raw_pointer_cast.h>
 
 #include "PSystemStructures.h"
@@ -10,8 +9,14 @@
 #define NEIGHBOURS_3D 27
 #define THREADS_CNT 128
 
+/*
+ * get threadsCnt for given runCnt
+ */
 int getThreads(int runCount, int threads_cnt = THREADS_CNT);
 
+/*
+* get blocksCnt for given runCnt
+*/
 dim3 getBlocks(int runCount, int threads_cnt = THREADS_CNT);
 
 void checkCudaErrors(cudaError_t cudaStatus);

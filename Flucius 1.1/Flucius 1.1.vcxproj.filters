@@ -36,6 +36,8 @@
     <ClCompile Include="PSystemStructures.cpp">
       <Filter>ParticleSystem</Filter>
     </ClCompile>
+    <ClCompile Include="Renderable.cpp" />
+    <ClCompile Include="Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Box.h" />
@@ -49,7 +51,6 @@
     <ClInclude Include="shader.h" />
     <ClInclude Include="tables.h" />
     <ClInclude Include="Timer.h" />
-    <ClInclude Include="torus.h" />
     <ClInclude Include="vectorHelper.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="PSystemStructures.h">

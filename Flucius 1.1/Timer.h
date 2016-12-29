@@ -4,8 +4,7 @@
 
 class Timer {
 public:
-	Timer() : isPaused(false)
-	{	step();	}
+	Timer();
 	~Timer()	{}
 
 	void step();

@@ -52,7 +52,7 @@ PSystem::PSystem(float size) :
 {
 	addParticleBox(glm::vec3(20, 5, 20), 30);
 
-	settings.deltaQ = 0.1f*PARTICLE_H;
+	settings.deltaQ = 0.1f * PARTICLE_H;
 	settings.iterationsCount = 3;
 	settings.pressureK = 0.01f;
 	settings.setRestDencity(0.5f);
@@ -116,4 +116,21 @@ void PSystem::addParticle(glm::vec3 pos) {
 
 size_t PSystem::getParticlesCount() {
 	return particles_t->count;
+}
+
+void PSystem::setRenderer(Renderable* renderDelegate)
+{
+	this->renderDelegate = renderDelegate;
+}
+
+void PSystem::render()
+{
+	update();
+	renderDelegate->modelMatrixID = modelMatrixID;
+	renderDelegate->render();
+}
+
+Box PSystem::getBox()
+{
+	return box;
 }

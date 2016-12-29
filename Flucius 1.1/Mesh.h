@@ -3,13 +3,20 @@
 #include "Renderable.h"
 
 #include <gl\glew.h>
-#include <glm\glm.hpp>
 
 #include "Vertex.h"
 
-class Mesh : public Renderable{
+/*
+ * Realisation of renderable that renders Vertex* vertices
+ */
+class Mesh : public Renderable
+{
 public:	
-	void bind(const Vertex * vertices, int vCount, const GLuint * indices, int iCount);
+	/*
+	 * vCount vertices stored in vertices
+	 * iCount indices stored in indices
+	 */
+	void bind(const Vertex* vertices, int vCount, const GLuint* indices, int iCount);
 	virtual void render();
 
 private:

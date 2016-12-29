@@ -1,5 +1,10 @@
 #include "Timer.h"
 
+Timer::Timer() : isPaused(false)
+{
+	step();
+}
+
 void Timer::step()
 {
 	startTime = clock() / 1000.0f;

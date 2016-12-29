@@ -9,44 +9,64 @@
 
 #include "PSystemStructures.h"
 
+/*
+ * PSystem is responsible for simulation of soft particle hydrodynamics
+ */
 class PSystem: public Renderable {
 public:
 	SPH::Settings settings;
 
+	/*
+	 * size -- size of side of the cube which encloses the simulation
+	 */
 	PSystem(float size);
 	~PSystem();
 
+	/*
+	 * Add particle at pos
+	 */
 	void addParticle(glm::vec3 pos);
+
+	/*
+	 * Add a grid of particles filling a cubic box starting from startPos and placing linearCnt of particles on each side
+	 */
 	void addParticleBox(glm::vec3 startPos, int linearCnt);
+
+	/*
+	 * Get particles that are simulated
+	 */
 	SPH::Particle* getParticles_dev();
+
+	/*
+	 * Get particles positions
+	 */
 	glm::vec3* getParticlesPositions_dev();
+
+	/*
+	 * Get amount of simulated particles
+	 */
 	size_t getParticlesCount();
 
-	void setRenderer(Renderable* renderDelegate)
-	{
-		this->renderDelegate = renderDelegate;
-	}
+	/*
+	 * Set renderer delegate that will do all the rendering for PSystem
+	 */
+	void setRenderer(Renderable* renderDelegate);
 
-	virtual void render()
-	{
-		update();
-		renderDelegate->modelMatrixID = modelMatrixID;
-		renderDelegate->render();
-	}
+	virtual void render();
 
-	void update();
-
-	Box getBox()
-	{
-		return box;
-	}
+	/*
+	 * Get enclosing box
+	 */
+	Box getBox();
 
 private:
 	Renderable* renderDelegate;
 	Box box;
-	SPH::EmulatedParticles_Thrust * particles_t;
-	SPH::EmulatedParticles_Dev * particles_dev;
-	Partition3D<SPH::Particle> * partition3D;
+	SPH::EmulatedParticles_Thrust* particles_t;
+	SPH::EmulatedParticles_Dev* particles_dev;
+	Partition3D<SPH::Particle>* partition3D;
+
+	void update();
 
 	void cudaInit();
 	void cudaClear();

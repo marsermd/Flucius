@@ -3,7 +3,7 @@
 #include <glm\gtc\matrix_transform.hpp>
 #include <glm\gtx\transform.hpp>
 
-void Mesh::bind(const Vertex * vertices, int vCount, const GLuint * indices, int iCount) {
+void Mesh::bind(const Vertex* vertices, int vCount, const GLuint* indices, int iCount) {
 	vertexCount = vCount;
 	indexCount = iCount;
 	glGenVertexArrays(1, &vao);

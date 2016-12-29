@@ -1,33 +1,29 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <GL\glew.h>
 #include <GLFW\glfw3.h>
 #include <glm\glm.hpp>
-#include <glm\gtc\matrix_transform.hpp>
-#include <glm\gtx\transform.hpp>
 #include "Timer.h"
 
 class Camera {
 public:
-	Camera(GLFWwindow *window, glm::vec3 center, float distance):
-		center(center),
-		distance(distance)
-	{
-		timer = new Timer();
-		parentWindow = window;
-		angleX = 0;
-		angleY = 0;
-		projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 500.0f);
-		react();
-	}
-	~Camera() {
-		delete timer;
-	}
+	/*
+	 * Camera listen's to window's events
+	 * It rotates around the center at given distance
+	 */
+	Camera(GLFWwindow *window, glm::vec3 center, float distance);
+	~Camera();
 	
+	// Update transform according to user input
 	void react();
-	glm::mat4 getMatrix() {
-		return matrix;
-	}
+
+	// Get ViewProjection matrix
+	glm::mat4 getMatrix();
+
+	/*
+	 * Returns camera's position
+	 */
 	glm::vec3 getPosition();
 
 private:

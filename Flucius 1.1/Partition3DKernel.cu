@@ -30,7 +30,7 @@ __global__ void findElementPartitionIndex(T * elements, int * partitonIdx, int e
 }
 
 
-// updating partition values(each partition pointers on the first element)
+// Updating partition values(each partition points on the first element)
 __global__ void matchElementToCell(int * partitonIdx, int * partitons, int eCount, int ttlCount)
 {
 	int index = min(blockIdx.y * 65535 * THREADS_CNT + blockIdx.x * THREADS_CNT + threadIdx.x, eCount - 1);
@@ -99,6 +99,28 @@ void Partition3D<T>::cudaFreeMemory() {
 	cudaFree(partitions_dev);
 	cudaFree(partitionIdx_dev);
 }
+
+template <typename T>
+Partition3D<T>::Partition3D(T* elements_dev, int eCount, Box boundingBox, float radius)
+{
+	r = radius;
+	countx = ceil((boundingBox.size.x + EPS) / radius);
+	county = ceil((boundingBox.size.y + EPS) / radius);
+	countz = ceil((boundingBox.size.z + EPS) / radius);
+	ttlCount = countx * county * countz;
+	printf("%d, %d, %d\n", countx, county, countz);
+
+	cudaInit(eCount);
+	oldECount = eCount;
+	update(elements_dev, eCount);
+}
+
+template <typename T>
+Partition3D<T>::~Partition3D()
+{
+	cudaCleanup();
+}
+
 
 template <typename T> 
 void createTEMPLATE(){

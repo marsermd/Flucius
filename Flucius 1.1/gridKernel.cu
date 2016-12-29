@@ -1,19 +1,14 @@
 #include "grid.h"
 
-#include <math.h>
-#include <glm\glm.hpp>
-#include <glm\gtx\norm.hpp>
 #include <stdio.h>
 #include <cuda_gl_interop.h>
 #include <cuda_runtime.h>
 #include "device_launch_parameters.h" 
 #include <thrust\device_ptr.h>
-#include <thrust\detail\raw_pointer_cast.h>
 
 #include "tables.h"
 #include "Partition3D.h"
 #include "cudaHelper.h"
-#include "PSystem.h"
 
 #define uint unsigned int
 #define PI 3.1415f
