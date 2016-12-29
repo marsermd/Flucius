@@ -21,3 +21,4 @@ Hotkeys
 - W/A/S/D to control gravity
 - E/R Decrease/Increase viscosity
 - T/Y Decrease/Increae solver iteration count
+- Space to drop another bunch of particles
