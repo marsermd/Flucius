@@ -67,7 +67,6 @@ namespace SPH
 		glm::vec3* prevPos;
 		glm::vec3* vorticities;
 		Particle* particles;
-		glm::vec3* externalForces;
 		int* neighbours;
 		int* neighboursCnt;
 	};
@@ -84,7 +83,6 @@ namespace SPH
 		thrust::device_vector<glm::vec3> prevPos;
 		thrust::device_vector<glm::vec3> vorticities;
 		thrust::device_vector<Particle> particles;
-		thrust::device_vector<glm::vec3> externalForces;
 		thrust::device_vector<int> neighbours;
 		thrust::device_vector<int> neighboursCnt;
 

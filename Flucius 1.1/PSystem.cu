@@ -5,18 +5,9 @@
 #include "cudaHelper.h"
 #include "PSystemConstants.h"
 
-#define START_SIZE 32368
-#define GRAVITY glm::vec3(0, -9.8f, 0)
-
 using namespace SPH;
 
 EmulatedParticles_Thrust::EmulatedParticles_Thrust()
-	//:
-	//positions(START_COUNT),
-	//particles(START_COUNT),
-	//externalForces(START_COUNT),
-	//neighbours(START_COUNT * MAX_NEIGHBOURS),
-	//neighboursCnt(START_COUNT)
 {
 	count = 0;
 }
@@ -38,7 +29,6 @@ void EmulatedParticles_Thrust::pushToDevice()
 	prevPos_host.clear();
 
 	vorticities.resize(count, glm::vec3(0.0f));
-	externalForces.resize(count, GRAVITY);
 	neighbours.resize(count * MAX_NEIGHBOURS, 0);
 	neighboursCnt.resize(count, 0);
 }
@@ -51,7 +41,6 @@ void EmulatedParticles_Thrust::setupDev(EmulatedParticles_Dev * particles_dev)
 	particles_dev->prevPos        = cudaGetRawRef<glm::vec3>(&prevPos);
 	particles_dev->vorticities    = cudaGetRawRef<glm::vec3>(&vorticities);
 	particles_dev->particles      =  cudaGetRawRef<Particle>(&particles);
-	particles_dev->externalForces = cudaGetRawRef<glm::vec3>(&externalForces);
 	particles_dev->neighbours     =       cudaGetRawRef<int>(&neighbours);
 	particles_dev->neighboursCnt  =       cudaGetRawRef<int>(&neighboursCnt);
 }
