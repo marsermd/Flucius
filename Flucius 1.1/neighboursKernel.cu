@@ -4,7 +4,7 @@
 #include "cudaHelper.h"
 #include "PSystemConstants.h"
 
-__global__ void findKNearestNeighbors(Particle* particles, int pCount, int * partitionIdx, int * partitions, dim3 counts, int ttlCount, int* neighbors, int* neighboursCnt){
+__global__ void findKNearestNeighbors(SPH::Particle* particles, int pCount, int * partitionIdx, int * partitions, dim3 counts, int ttlCount, int* neighbors, int* neighboursCnt){
 	int index = threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT;
 	if(index < pCount) {
 		int curNeighboursCnt = 0;
@@ -71,7 +71,7 @@ __global__ void findKNearestNeighbors(Particle* particles, int pCount, int * par
 	}
 }
 
-void cudaFindKNeighbors(Particle* particles_dev, int pCount, Partition3D<Particle> * partition3d, int * neighbours_dev, int * neighboursCnt_dev) {
+void cudaFindKNeighbors(SPH::Particle* particles_dev, int pCount, Partition3D<SPH::Particle> * partition3d, int * neighbours_dev, int * neighboursCnt_dev) {
 	partition3d->update(particles_dev, pCount);
 	dim3 counts(partition3d->countx, partition3d->county, partition3d->countz);
 	findKNearestNeighbors<<<getBlocks(pCount), getThreads(pCount)>>>(particles_dev, pCount,

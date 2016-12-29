@@ -10,50 +10,88 @@
 #define CUDA_CALLABLE_MEMBER
 #endif 
 
-struct Particle{
-	int id;
-	glm::vec3 pos;
-	glm::vec3 deltaPos;
-	glm::vec3 velocity;
-	glm::vec3 nextVelocity;
-	float lambda; 
-
-	CUDA_CALLABLE_MEMBER Particle()
+namespace SPH
+{
+	struct Settings
 	{
-		id = 0;
-		pos = glm::vec3(0);
-		deltaPos = glm::vec3(0);
-		velocity = glm::vec3(0);
-		nextVelocity = glm::vec3(0);
-		lambda = 0;
-	}
-};
+	public:
+		CUDA_CALLABLE_MEMBER Settings(){}
+		CUDA_CALLABLE_MEMBER ~Settings(){}
 
-struct EmulatedParticles_Dev{
-	int count;
-	glm::vec3* prevPos;
-	glm::vec3* vorticities;
-	Particle* particles;
-	glm::vec3* externalForces;
-	int* neighbours;
-	int* neighboursCnt;
-};
+		void setRestDencity(float value);
+		void setGravity(glm::vec3 value);
+		CUDA_CALLABLE_MEMBER glm::vec3 getGravity()
+		{
+			return glm::vec3(gravity[0], gravity[1], gravity[2]);
+		}
 
-struct EmulatedParticles_Thrust{
-	int count;
-	thrust::host_vector<glm::vec3> positions_host;
-	thrust::host_vector<Particle> particles_host;
+		int iterationsCount;
+		float deltaQ;
+		float pressureK;
+		float oneOverRestDencity;
+		float relaxation; // epselon, or relaxation parameter 
+		float viscosity;
+		float vorticityEpsilon;
+		float gravity[3];
+	};
+}
 
-	thrust::device_vector<glm::vec3> prev_pos;
-	thrust::device_vector<glm::vec3> vorticities;
-	thrust::device_vector<Particle> particles;
-	thrust::device_vector<glm::vec3> externalForces;
-	thrust::device_vector<int> neighbours;
-	thrust::device_vector<int> neighboursCnt;
+namespace SPH
+{
+	struct Particle
+	{
+		int id;
+		glm::vec3 pos;
+		glm::vec3 deltaPos;
+		glm::vec3 velocity;
+		glm::vec3 nextVelocity;
+		float lambda;
 
-	EmulatedParticles_Thrust();
-	void pushToDevice();
-	void setupDev(EmulatedParticles_Dev * particles);
-};
+		CUDA_CALLABLE_MEMBER Particle()
+		{
+			id = 0;
+			pos = glm::vec3(0);
+			deltaPos = glm::vec3(0);
+			velocity = glm::vec3(0);
+			nextVelocity = glm::vec3(0);
+			lambda = 0;
+		}
+	};
+}
+
+namespace SPH
+{
+	struct EmulatedParticles_Dev
+	{
+		int count;
+		glm::vec3* prevPos;
+		glm::vec3* vorticities;
+		Particle* particles;
+		glm::vec3* externalForces;
+		int* neighbours;
+		int* neighboursCnt;
+	};
+}
+
+namespace SPH
+{
+	struct EmulatedParticles_Thrust
+	{
+		size_t count;
+		thrust::host_vector<glm::vec3> prevPos_host;
+		thrust::host_vector<Particle> particles_host;
+
+		thrust::device_vector<glm::vec3> prevPos;
+		thrust::device_vector<glm::vec3> vorticities;
+		thrust::device_vector<Particle> particles;
+		thrust::device_vector<glm::vec3> externalForces;
+		thrust::device_vector<int> neighbours;
+		thrust::device_vector<int> neighboursCnt;
+
+		EmulatedParticles_Thrust();
+		void pushToDevice();
+		void setupDev(EmulatedParticles_Dev * particles);
+	};
+}
 
 #endif

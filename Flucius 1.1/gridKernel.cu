@@ -29,28 +29,6 @@ inline __device__ __host__ glm::vec3 lerp(glm::vec3 &a, glm::vec3 &b, float t)
 	return a + t*(b-a);
 }
 
-//_______________________________DEVICE VARIABLES________________________________________________________________________________________________________
-
-int *triTable_dev;
-int *vertsCountTable_dev;
-
-int *verticesOccupied_dev = 0;
-int *verticesOccupiedScan_dev = 0;
-int *verticesCompact_dev = 0;
-
-int *verticesToCubes_dev = 0;
-int *cubesToVertices_dev = 0;
-
-int *cubesOccupied_dev = 0;
-int *cubesOccupiedScan_dev = 0;
-int *cubesCompact_dev = 0;
-int *cubeVerticesCnt_dev = 0;
-int *cubeVerticesScan_dev = 0;
-
-Vertex *triangleVertices_dev = 0; 
-
-struct cudaGraphicsResource *cuda_vbo_resource;
-
 //_______________________________CUDA PART___________________________________________________________________________________________________________
 
 int ThrustExScanWrapper(int *output, int *input, unsigned int numElements)
@@ -248,7 +226,7 @@ __global__ void generateTriangles(
 
 //_______________________________LAUNCHERS___________________________________________________________________________________________________
 
-int Grid::cudaCalcGrid(glm::vec3 * particles_dev, int pCount) {	
+int Grid::cudaCalcGrid(glm::vec3 * particles_dev, size_t pCount) {
 	resetValuesKernel<<<getBlocks(numVertices), getThreads(numVertices)>>>(vertices_dev, numVertices);
 	cudaDeviceSynchronize();
 	checkCudaErrorsWithLine("failed reseting vertices values");
@@ -290,7 +268,7 @@ int Grid::cudaAnalyzeCubes(float threshold) {
 
 void Grid::cudaComputeSurface(int maxVerts, float threshold) {
 	size_t num_bytes;
-	cudaGraphicsMapResources(1, &cuda_vbo_resource, 0);
+	cudaGraphicsMapResources(1, &cuda_vbo_resource, NULL);
 	cudaGraphicsResourceGetMappedPointer((void **)&triangleVertices_dev, &num_bytes, cuda_vbo_resource);
 	checkCudaErrorsWithLine("failed setting up vbo");
 
@@ -301,7 +279,7 @@ void Grid::cudaComputeSurface(int maxVerts, float threshold) {
 		activeCubes, maxVerts, threshold);
 	checkCudaErrorsWithLine("generate triangles failed");
 
-	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, 0);
+	cudaGraphicsUnmapResources(1, &cuda_vbo_resource, NULL);
 	cudaDeviceSynchronize();
 	checkCudaErrorsWithLine("failed unsetting vbo");
 }
@@ -377,7 +355,7 @@ void Grid::initGrid() {
 	checkCudaErrorsWithLine("failed init cubes");
 }
 
-void Grid::cudaInit(int pCount) {
+void Grid::cudaInit(size_t pCount) {
 	checkCudaErrors(cudaSetDevice(0));
 
 	createCudaMemory(pCount);
@@ -385,7 +363,8 @@ void Grid::cudaInit(int pCount) {
 
 	allocateTextures();
 
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource, vbo, cudaGraphicsRegisterFlagsNone));
+	cudaGraphicsGLRegisterBuffer(&cuda_vbo_resource, vbo, cudaGraphicsRegisterFlagsNone);
+	checkCudaErrorsWithLine("failed registering graphics resource");
 }
 
 void Grid::cudaClear() {
@@ -393,7 +372,7 @@ void Grid::cudaClear() {
 	deleteCudaMemory();
 }
 
-void Grid::createCudaMemory(int pCount) {
+void Grid::createCudaMemory(size_t pCount) {
 	// the "numVertices + 1" is a hack, needed to be able to access to an imaginary vertex, to store garbage
 	checkCudaErrors(cudaMalloc((void**)&vertices_dev, (numVertices + 1) * sizeof(GridVertex)));
 	checkCudaErrors(cudaMalloc((void**)&cubes_dev, numCubes * sizeof(GridCube)));

@@ -37,13 +37,13 @@ private:
 
 	GLuint vbo, vao;
 
-	int cudaCalcGrid(glm::vec3* particles_dev, int pCount);
+	int cudaCalcGrid(glm::vec3* particles_dev, size_t pCount);
 	int cudaAnalyzeCubes(float threshold);
 	void cudaComputeSurface(int maxVerts, float threshold);
-	void cudaInit(int pCount);
+	void cudaInit(size_t pCount);
 	void cudaClear();
 	void initGrid();
-	void createCudaMemory(int pCount);
+	void createCudaMemory(size_t pCount);
 	void deleteCudaMemory();
 	void allocateTextures();
 	void cudaRestoreCVConnections();
@@ -79,5 +79,25 @@ private:
 		glDeleteVertexArrays(1, &vao);
 		vao = 0;
 	}
+	//_______________________________DEVICE VARIABLES________________________________________________________________________________________________________
+
+	int* cubesOccupied_dev = 0;
+	int* cubesOccupiedScan_dev = 0;
+	int* cubesCompact_dev = 0;
+	int* cubeVerticesCnt_dev = 0;
+	int* cubeVerticesScan_dev = 0;
+
+	Vertex* triangleVertices_dev = 0;
+
+	int* triTable_dev;
+	int* vertsCountTable_dev;
+
+	int* verticesOccupied_dev = 0;
+	int* verticesOccupiedScan_dev = 0;
+	int* verticesCompact_dev = 0;
+
+	int* verticesToCubes_dev = 0;
+	int* cubesToVertices_dev = 0;
+	cudaGraphicsResource* cuda_vbo_resource;
 };
 #endif

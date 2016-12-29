@@ -1,5 +1,4 @@
 #include "Grid.h"
-#include "cudaHelper.h"
 #include "PSystemConstants.h"
 
 Grid::Grid(PSystem* pSystem) :

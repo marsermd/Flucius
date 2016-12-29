@@ -66,6 +66,6 @@ private:
 	//_______________________________DEVICE VARIABLES________________________________________________________________________________________________________
 
 	Vertex *triangleVertices_dev = 0;
-	struct cudaGraphicsResource *cuda_vbo_resource;
+	cudaGraphicsResource *cuda_vbo_resource;
 };
 #endif

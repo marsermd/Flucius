@@ -11,13 +11,16 @@
 
 class PSystem: public Renderable {
 public:
+	SPH::Settings settings;
+
 	PSystem(float size);
 	~PSystem();
 
 	void addParticle(glm::vec3 pos);
-	Particle* getParticles_dev();
+	void addParticleBox(glm::vec3 startPos, int linearCnt);
+	SPH::Particle* getParticles_dev();
 	glm::vec3* getParticlesPositions_dev();
-	int getParticlesCount();
+	size_t getParticlesCount();
 
 	void setRenderer(Renderable* renderDelegate)
 	{
@@ -27,6 +30,7 @@ public:
 	virtual void render()
 	{
 		update();
+		renderDelegate->modelMatrixID = modelMatrixID;
 		renderDelegate->render();
 	}
 
@@ -40,10 +44,12 @@ public:
 private:
 	Renderable* renderDelegate;
 	Box box;
-	EmulatedParticles_Thrust * particles_t;
-	EmulatedParticles_Dev * particles_dev;
-	Partition3D<Particle> * partition3D;
-	void init();
+	SPH::EmulatedParticles_Thrust * particles_t;
+	SPH::EmulatedParticles_Dev * particles_dev;
+	Partition3D<SPH::Particle> * partition3D;
+
+	void cudaInit();
+	void cudaClear();
 };
 
 #endif

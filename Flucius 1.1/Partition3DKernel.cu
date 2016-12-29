@@ -45,6 +45,14 @@ __global__ void matchElementToCell(int * partitonIdx, int * partitons, int eCoun
 //________________________________________HOST CODE___________________________
 template <typename T>
 void Partition3D<T>::update(T * elements_dev, int eCount) {
+	if (oldECount != eCount)
+	{
+		oldECount = eCount;
+		cudaFreeMemory();
+		cudaInit(eCount);
+	}
+
+
 	clearPartitions<<<getBlocks(ttlCount), getThreads(ttlCount)>>>(partitions_dev, ttlCount);
 	checkCudaErrorsWithLine("failed clearing partition");
 
@@ -113,7 +121,7 @@ void createTEMPLATE(){
 void dontCALLthisFUNCTION_IT_IsUsLeSS() {
 	//register here any type you want to use
 	createTEMPLATE<GridVertex>();
-	createTEMPLATE<Particle>();
+	createTEMPLATE<SPH::Particle>();
 }
 
 #endif

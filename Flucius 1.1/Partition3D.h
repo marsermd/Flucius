@@ -37,7 +37,9 @@ public:
 		countz = ceil((boundingBox.size.z + EPS) / radius);
 		ttlCount = countx * county * countz;
 		printf("%d, %d, %d\n", countx, county, countz);
+
 		cudaInit(eCount);
+		oldECount = eCount;
 		update(elements_dev, eCount);
 	}
 	~Partition3D() {
@@ -53,7 +55,8 @@ public:
 			   z >= 0 && z < countz;
 	}
 
-protected:
+private:
+	int oldECount;
 	void cudaInit(int eCount);
 	void cudaCleanup();
 

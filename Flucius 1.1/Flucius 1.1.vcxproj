@@ -60,6 +60,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="objloader.cpp" />
+    <ClCompile Include="PSystemStructures.cpp" />
     <ClCompile Include="runner.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="Timer.cpp" />
@@ -214,6 +215,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <Optimization>O2</Optimization>
       <TypeInfo>false</TypeInfo>
       <CodeGeneration>compute_20,sm_21</CodeGeneration>
+      <FastMath>true</FastMath>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

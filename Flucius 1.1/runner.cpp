@@ -95,6 +95,48 @@ void openWindow(int width, int height) {
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 }
 
+void updatePsystemSettings(PSystem& pSystem, GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		pSystem.settings.setGravity(glm::vec3(0, 0, -10));
+	}
+	else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		pSystem.settings.setGravity(glm::vec3(0, 0, 10));
+	}
+	else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		pSystem.settings.setGravity(glm::vec3(-10, 0, 0));
+	}
+	else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		pSystem.settings.setGravity(glm::vec3(10, 0, 0));
+	}
+	else
+	{
+		pSystem.settings.setGravity(glm::vec3(0, -10, 0));
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+	{
+		pSystem.settings.viscosity = glm::clamp(pSystem.settings.viscosity - 0.02f, 0.0f, 1.0f);
+	}
+	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+	{
+		pSystem.settings.viscosity = glm::clamp(pSystem.settings.viscosity + 0.02f, 0.0f, 1.0f);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+	{
+		pSystem.settings.iterationsCount = glm::clamp(pSystem.settings.iterationsCount - 1, 1, 10);
+	}
+	if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+	{
+		pSystem.settings.iterationsCount = glm::clamp(pSystem.settings.iterationsCount + 1, 1, 10);
+	}
+}
+
 int main() {
 	openWindow(1024, 768);
 
@@ -120,13 +162,16 @@ int main() {
 
 	PSystem pSystem = PSystem(70.0f);
 	SimplePsystemDrawer pSystemDrawer = SimplePsystemDrawer(&pSystem);
-	Grid pSystemGrid = Grid(&pSystem);
+	//Grid pSystemGrid = Grid(&pSystem);
 	pSystem.setRenderer(&pSystemDrawer);
 
-	float a = 0;
+	Scene scene(&camera, programID);
+	scene.registerObject(&pSystem);
 
 	Timer fpsTimer; 
 	int frame = 0;
+
+	bool wasSpacePressed = false;
 
 	do {
 		camera.react();
@@ -138,34 +183,33 @@ int main() {
 
 		glUseProgram(programID);
 
-		GLuint viewProjectionMatrixID = glGetUniformLocation(programID, "transform.viewProjection");
-		GLuint modelMatrixID = glGetUniformLocation(programID, "transform.model");
-		GLuint cameraPositionID = glGetUniformLocation(programID, "transform.cameraPosition");
-
-		glm::mat4 viewProjection = camera.getMatrix();
-		a += 1;
-		glm::vec3 cameraPosition = camera.getPosition();
-
-		glUniformMatrix4fv(viewProjectionMatrixID, 1, GL_FALSE, &viewProjection[0][0]);
-		glUniform3fv(cameraPositionID, 1, &cameraPosition[0]);
-
 		MaterialSetup(programID, material);
 		PointLightSetup(programID, pointLight);
 
-		pSystemDrawer.modelMatrixID = modelMatrixID;
-		pSystemGrid.modelMatrixID = modelMatrixID;
-		pSystem.render();
-
-		glm::mat4 initial = glm::translate(glm::scale(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-		glm::mat4 model = glm::rotate(glm::rotate(initial, a, glm::vec3(0.0f, 1.0f, 0.0f)), 45.0f, glm::vec3(-1.0f, 0.0f, 0.0f));
+		scene.render();
 
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		frame = (frame + 1) % 10;
 		if (frame == 0) {
-			printf("fps = %.2f\n", fpsTimer.getDelta() / 10.0f);
+			printf("fps = %.2f\n", 10.0f / fpsTimer.getDelta());
 			fpsTimer.step();
+		}
+
+		updatePsystemSettings(pSystem, window);
+
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		{
+			if (!wasSpacePressed)
+			{
+				pSystem.addParticleBox(glm::vec3(20, 50, 20), 10);
+			}
+			wasSpacePressed = true;
+		}
+		else
+		{
+			wasSpacePressed = false;
 		}
 
 	} // Check if the ESC key was pressed or the window was closed

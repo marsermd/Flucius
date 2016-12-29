@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="cudaHelper.cu" />
-    <CudaCompile Include="neighboursKernel.cu" />
     <CudaCompile Include="Partition3DKernel.cu" />
     <CudaCompile Include="vectorHelper.cu" />
     <CudaCompile Include="PsystemKernel.cu">
@@ -23,6 +22,9 @@
     <CudaCompile Include="PSystem.cu">
       <Filter>ParticleSystem</Filter>
     </CudaCompile>
+    <CudaCompile Include="neighboursKernel.cu">
+      <Filter>ParticleSystem\Helpers</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -31,13 +33,15 @@
     <ClCompile Include="runner.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="PSystemStructures.cpp">
+      <Filter>ParticleSystem</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Box.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="cudaHelper.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="neighbours.h" />
     <ClInclude Include="objloader.h" />
     <ClInclude Include="Partition3D.h" />
     <ClInclude Include="Renderable.h" />
@@ -66,6 +70,9 @@
     <ClInclude Include="SimplePsystemDrawer.h">
       <Filter>ParticleSystem\Drawers\SimpleDrawer</Filter>
     </ClInclude>
+    <ClInclude Include="neighbours.h">
+      <Filter>ParticleSystem\Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Flucius 1.1.vcxproj" />
@@ -91,6 +98,9 @@
     </Filter>
     <Filter Include="ParticleSystem\Drawers\SimpleDrawer">
       <UniqueIdentifier>{85580b0c-3bdd-4c62-97d2-909956f610bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ParticleSystem\Helpers">
+      <UniqueIdentifier>{ac660537-b9c4-4d23-8ec0-f4c880fa6960}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
