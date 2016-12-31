@@ -21,7 +21,20 @@ __global__ void createParticleQuadsKernel(SPH::Particle* particles, int pCount, 
 #pragma unroll
 		for (int j = 0; j < 3; j++) {
 			vertices[id].position[j] = particles[id].pos[j];
-			vertices[id].normal[j] = __saturatef((0.8 + particles[id].lambda * 50));
+		}
+
+		if (particles[id].isFixed)
+		{
+			vertices[id].normal[0] = 0;
+			vertices[id].normal[1] = 1;
+			vertices[id].normal[2] = 0;
+		}
+		else
+		{
+#pragma unroll
+			for (int j = 0; j < 3; j++) {
+				vertices[id].normal[j] = __saturatef((0.8 + particles[id].lambda * 50));
+			}
 		}
 	}
 }

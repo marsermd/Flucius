@@ -37,7 +37,7 @@ __device__ glm::vec3 wGradSpiky(glm::vec3 i, glm::vec3 j)
 __global__ void calculateLambda(EmulatedParticles_Dev particles)
 {
 	int particle = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, particles.count - 1);
-	if (particle < particles.count)
+	if (particle < particles.count && !particles.particles[particle].isFixed)
 	{
 		glm::vec3 curPos = particles.particles[particle].pos;
 		int nCnt = particles.neighboursCnt[particle];
@@ -74,7 +74,7 @@ __global__ void calculateLambda(EmulatedParticles_Dev particles)
 __global__ void calculateDeltaPos(EmulatedParticles_Dev particles)
 {
 	int particle = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, particles.count - 1);
-	if (particle < particles.count)
+	if (particle < particles.count && !particles.particles[particle].isFixed)
 	{
 		int nCnt = particles.neighboursCnt[particle];
 		glm::vec3 curPos = particles.particles[particle].pos;
@@ -106,7 +106,7 @@ __global__ void calculateDeltaPos(EmulatedParticles_Dev particles)
 __global__ void applyViscocityAndCalcVorticity(EmulatedParticles_Dev particles)
 {
 	int particle = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, particles.count - 1);
-	if (particle < particles.count)
+	if (particle < particles.count && !particles.particles[particle].isFixed)
 	{
 		int nCnt = particles.neighboursCnt[particle];
 		glm::vec3 curPos = particles.particles[particle].pos;
@@ -134,7 +134,7 @@ __global__ void applyViscocityAndCalcVorticity(EmulatedParticles_Dev particles)
 __global__ void applyVorticity(EmulatedParticles_Dev particles, float dt)
 {
 	int particle = min(threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT, particles.count - 1);
-	if (particle < particles.count)
+	if (particle < particles.count && !particles.particles[particle].isFixed)
 	{
 		int nCnt = particles.neighboursCnt[particle];
 		glm::vec3 curPos = particles.particles[particle].pos;
@@ -171,7 +171,7 @@ __global__ void updateVelocityToNewVelocity(EmulatedParticles_Dev particles)
 __global__ void applyExternalForces(EmulatedParticles_Dev particles, float dt)
 {
 	int particle = threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT;
-	if (particle < particles.count) {
+	if (particle < particles.count && !particles.particles[particle].isFixed) {
 		int id = particles.particles[particle].id;
 		particles.particles[particle].velocity += settings_dev->getGravity() * dt;
 		particles.particles[particle].pos = particles.prevPos[id] + dt * particles.particles[particle].velocity;
@@ -225,7 +225,7 @@ __global__ void boxCollisionResponse(EmulatedParticles_Dev ep, Box box)
 __global__ void updatePredPositions(EmulatedParticles_Dev ep)
 {
 	int particle = threadIdx.x + blockIdx.x * THREADS_CNT + blockIdx.y * 65535 * THREADS_CNT;
-	if (particle < ep.count)
+	if (particle < ep.count && !ep.particles[particle].isFixed)
 		ep.particles[particle].pos += ep.particles[particle].deltaPos;
 }
 

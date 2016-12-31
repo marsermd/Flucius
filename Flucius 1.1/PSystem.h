@@ -25,12 +25,12 @@ public:
 	/*
 	 * Add particle at pos
 	 */
-	void addParticle(glm::vec3 pos);
+	void addParticle(glm::vec3 pos, bool isFixed = false);
 
 	/*
 	 * Add a grid of particles filling a cubic box starting from startPos and placing linearCnt of particles on each side
 	 */
-	void addParticleBox(glm::vec3 startPos, int linearCnt);
+	void addParticleBox(glm::vec3 startPos, int linearCnt, bool isFixed = false);
 
 	/*
 	 * Get particles that are simulated

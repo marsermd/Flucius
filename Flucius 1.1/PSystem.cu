@@ -50,7 +50,8 @@ PSystem::PSystem(float size) :
 	particles_t(new EmulatedParticles_Thrust()),
 	particles_dev(new EmulatedParticles_Dev())
 {
-	addParticleBox(glm::vec3(20, 5, 20), 30);
+	addParticleBox(glm::vec3(10, 5, 10), 30);
+	addParticleBox(glm::vec3(40, 0, 40), 10, true);
 
 	settings.deltaQ = 0.1f * PARTICLE_H;
 	settings.iterationsCount = 3;
@@ -75,7 +76,7 @@ PSystem::~PSystem() {
 	delete particles_t;
 }
 
-void PSystem::addParticleBox(glm::vec3 startPos, int linearCnt)
+void PSystem::addParticleBox(glm::vec3 startPos, int linearCnt, bool isFixed)
 {
 	float dist = PARTICLE_H * 0.6f;
 	float randomScale = 0.01f;
@@ -88,7 +89,7 @@ void PSystem::addParticleBox(glm::vec3 startPos, int linearCnt)
 					(rand() % 1000) * 0.001f * randomScale,
 					(rand() % 1000) * 0.001f * randomScale
 					);
-				addParticle(pos);
+				addParticle(pos, isFixed);
 			}
 		}
 	}
@@ -103,8 +104,8 @@ glm::vec3* PSystem::getParticlesPositions_dev() {
 	return particles_dev->prevPos;
 }
 
-void PSystem::addParticle(glm::vec3 pos) {
-	Particle added;
+void PSystem::addParticle(glm::vec3 pos, bool isFixed) {
+	Particle added(isFixed);
 	added.pos = pos;
 	added.id = particles_t->count;
 

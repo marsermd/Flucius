@@ -40,6 +40,7 @@ namespace SPH
 {
 	struct Particle
 	{
+		bool isFixed;
 		int id;
 		glm::vec3 pos;
 		glm::vec3 deltaPos;
@@ -47,8 +48,10 @@ namespace SPH
 		glm::vec3 nextVelocity;
 		float lambda;
 
-		CUDA_CALLABLE_MEMBER Particle()
+		CUDA_CALLABLE_MEMBER Particle(bool isFixed = false):
+			isFixed(isFixed)
 		{
+
 			id = 0;
 			pos = glm::vec3(0);
 			deltaPos = glm::vec3(0);
