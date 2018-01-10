@@ -10,7 +10,7 @@ https://www.youtube.com/watch?v=C2DxtzNhj5g
 Usage
 ========================
 To run you would need an 
-- nvidia GPU with computing capability at least 2.0 (most graphics cards in past 5 years)
+- Nvidia GPU with computing capability at least 2.0 (most graphics cards in the past 5 years)
 - Windows 64 bit
 - Opengl
 
