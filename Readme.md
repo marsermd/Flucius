@@ -1,13 +1,13 @@
 Disclaimer
 ========================
-Please note that this project was started in 2014, when I had almost no work experience. 
-I hope to come back one day and refactor the hell out of it:)
-But GPU Fluid simulation is still one of the most complex things I've done as a home project, so I will show it off:)
+Please note that this project was started in 2014, when I had almost no work experience.   
+I hope to come back one day and refactor the hell out of it:)   
+But Fluid simulation on GPU is still one of the most complex things I've done as a home project, so I will show it off:)
 
 About
 ========================
-This is a gpu fluid simulation.
-Simulation method is position based smooth particle hydrodynamics (Miles Macklin, Matthias Muller: "Position Based Fluids", 2013)
+This is a realtime fluid simulation executed on GPU using CUDA.   
+Simulation is based on a paper about [smooth particle hydrodynamics](http://mmacklin.com/pbf_sig_preprint.pdf) (by Miles Macklin, Matthias Muller: "Position Based Fluids", 2013)
 
 Watch
 ========================
