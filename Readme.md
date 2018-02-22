@@ -1,3 +1,9 @@
+Disclaimer
+========================
+Please note that this project was started in 2014, when I had almost no work experience. 
+I hope to come back one day and refactor the hell out of it:)
+But GPU Fluid simulation is still one of the most complex things I've done as a home project, so I will show it off:)
+
 About
 ========================
 This is a gpu fluid simulation.
