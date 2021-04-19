@@ -11,7 +11,7 @@ Simulation is based on a paper about [smooth particle hydrodynamics](http://mmac
 
 Watch
 ========================
-https://www.youtube.com/watch?v=P9LP9VxWFE8
+[![Demonstration video](https://j.gifs.com/wVMXjw.gif)](https://www.youtube.com/watch?v=P9LP9VxWFE8)
 
 Usage
 ========================
